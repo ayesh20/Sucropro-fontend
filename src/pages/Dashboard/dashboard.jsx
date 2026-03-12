@@ -162,8 +162,8 @@ export default function Dashboard() {
               {storageUnits.map((u, i) => (
                 <div key={i} className="flex items-center gap-2 mb-1.5">
                   <span className="text-sm">🏭</span>
-                  <span className="text-xs text-slate-600 w-12">{u.name}</span>
-                  <span className="text-[11px] text-slate-400 w-80">{u.pct}%</span>
+                  <span className="text-xs text-slate-600 w-80">{u.name}</span>
+                  <span className="text-[11px] text-slate-400 w-10">{u.pct}%</span>
                   <div className="flex-1 bg-slate-200 rounded h-1.5">
                     <div
                       className="h-full rounded"
@@ -178,7 +178,7 @@ export default function Dashboard() {
           {/* System Status card */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <h4 className="text-sm font-bold text-gray-900 mb-4">System Status</h4>
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-7">
               {systemStatuses.map((s, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

@@ -2,11 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-// Auth Pages
 import Login from "./pages/Login/Login.jsx";
-import Register from "./pages/Usermanagement/usermanagement.jsx";
-
-// App Pages
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import LogNewBatch from "./pages/New batch/newbatch.jsx";
 import UserManagement from "./pages/Usermanagement/usermanagement.jsx";
@@ -33,16 +29,15 @@ function App() {
 
       <BrowserRouter>
         <Routes>
-          {/* Auth */}
+      
           <Route path="/"          element={<Login />} />
           <Route path="/user-management"  element={<UserManagement />} />
 
-          {/* App */}
           <Route path="/dashboard"           element={<Dashboard />} />
           <Route path="/new-batch"           element={<LogNewBatch />} />
          
 
-          {/* Catch all → redirect to login */}
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

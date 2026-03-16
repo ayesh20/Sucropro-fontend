@@ -147,14 +147,43 @@ const NavItem = ({ icon, label, active = false, badge = null, onClick }) => (
       <span className="flex items-center flex-shrink-0">{icon}</span>
       {label}
     </span>
-   
+    {badge != null && (
+      <span className="w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+        {badge}
+      </span>
+    )}
   </div>
 );
 
+/* ── Get initials from full name ── */
+const getInitials = (name = "") =>
+  name.trim().split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "AD";
 
+/* ─── SIDEBAR ───────────────────────────────────────── */
 export default function Sidebar({ activePage = "Dashboard", onLogout }) {
   const navigate = useNavigate();
   const is = (label) => activePage === label;
+
+  /* ── Read logged-in user from localStorage ── */
+  const adminData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("adminData")) || {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const userName = adminData.Name  || adminData.name  || "Admin User";
+  const userRole = adminData.role  || "Admin";
+  const initials = getInitials(userName);
+
+  /* ── Logout handler ── */
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("adminData");
+    navigate("/");
+    if (onLogout) onLogout();
+  };
 
   return (
     <aside className="w-[242px] min-w-[242px] flex flex-col h-screen overflow-y-auto flex-shrink-0"
@@ -198,7 +227,8 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
       <SectionLabel text="STORAGE" icon={<StorLabel />} color="#f59e0b" />
       <NavItem icon={<BoxNav />} label="Storage Records"
         active={is("Storage Records")} onClick={() => navigate("/storage-records")} />
-      
+      <NavItem icon={<DocNav />} label="Loss Monitoring"
+        active={is("Loss Monitoring")} onClick={() => navigate("/loss-monitoring")} />
 
       {/* REPORTS */}
       <SectionLabel text="REPORTS" icon={<RepLabel />} color="#ef4444" />
@@ -210,24 +240,34 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
       {/* AUTH */}
       <SectionLabel text="AUTH" icon={<AuthLabel />} color="#f59e0b" />
       <NavItem icon={<UserMgmtIcon />} label="User Management"
-        active={is("User Management")} onClick={() => navigate("/user-management")}
-        />
+        active={is("User Management")} onClick={() => navigate("/user-management")} />
 
       <div className="flex-1" />
 
-      {/* User */}
+      {/* ── User section — dynamic from localStorage ── */}
       <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5 mb-2.5">
-          <div className="w-9 h-9 rounded-full bg-green-900 flex items-center justify-center text-white font-bold text-[12.5px] flex-shrink-0">
-            AJ
+          {/* Avatar with initials */}
+          <div className="w-9 h-9 rounded-full bg-green-800 flex items-center justify-center text-white font-bold text-[12px] flex-shrink-0 border border-green-600">
+            {initials}
           </div>
-          <div>
-            <div className="text-[13px] font-bold text-white">Ayesh Jayashan</div>
-            <div className="text-[11px] font-semibold text-green-400">Super &nbsp;Admin</div>
+          <div className="min-w-0">
+            {/* Name — truncate if too long */}
+            <div className="text-[13px] font-bold text-white truncate" title={userName}>
+              {userName}
+            </div>
+            {/* Role */}
+            <div className="text-[11px] font-semibold text-green-400 truncate" title={userRole}>
+              {userRole}
+            </div>
           </div>
         </div>
-        <div onClick={onLogout}
-          className="flex items-center gap-1.5 text-slate-400 text-[12.5px] cursor-pointer hover:text-slate-300 transition-colors">
+
+        {/* Sign out */}
+        <div
+          onClick={handleLogout}
+          className="flex items-center gap-1.5 text-slate-400 text-[12.5px] cursor-pointer hover:text-slate-200 transition-colors"
+        >
           <LogOut size={13} />
           Sign out
         </div>

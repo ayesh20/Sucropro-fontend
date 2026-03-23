@@ -6,6 +6,7 @@ import Login from "./pages/Login/Login.jsx";
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import LogNewBatch from "./pages/New batch/newbatch.jsx";
 import UserManagement from "./pages/Usermanagement/usermanagement.jsx";
+import AllBatches from "./pages/All batch/allbatch.jsx";
 
 
 function App() {
@@ -29,15 +30,15 @@ function App() {
 
       <BrowserRouter>
         <Routes>
-      
-          <Route path="/"          element={<Login />} />
-          <Route path="/user-management"  element={<UserManagement />} />
 
-          <Route path="/dashboard"           element={<Dashboard />} />
-          <Route path="/new-batch"           element={<LogNewBatch />} />
-         
+          <Route path="/" element={<Login />} />
+          <Route path="/user-management" element={<UserManagement />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/new-batch" element={<LogNewBatch />} />
+          <Route path="/batch-list" element={<AllBatches />} />
 
-          
+
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

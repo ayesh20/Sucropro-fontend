@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { RefreshCw, Calendar } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Sidebar from "../../components/Sidebar";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 export default function LogNewBatch() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     batchId: "",
     harvestDate: "",
@@ -18,17 +22,72 @@ export default function LogNewBatch() {
     storageUnit: "Unit A",
   });
 
-  const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+  const handleChange = (key, value) => setForm((p) => {
+    const updatedForm = { ...p, [key]: value };
 
-  const handleSubmit = () => {
-    console.log(form);
-    
+    if (key === "sugarcaneWeightWithVehicle" || key === "vehicleWeight") {
+      const withVehicle = parseFloat(updatedForm.sugarcaneWeightWithVehicle);
+      const vehicle = parseFloat(updatedForm.vehicleWeight);
+
+      if (!isNaN(withVehicle) && !isNaN(vehicle)) {
+        updatedForm.actualSugarcaneWeight = parseFloat((withVehicle - vehicle).toFixed(2)).toString();
+      }
+    }
+
+    return updatedForm;
+  });
+
+  const handleSubmit = async () => {
+    // Basic validation
+    const required = ["batchId", "harvestDate", "fieldId", "caneVariety", "sugarcaneWeightWithVehicle", "vehicleWeight", "actualSugarcaneWeight", "caneAge"];
+    for (const key of required) {
+      if (!form[key]) {
+        toast.error(`Please fill in all required fields`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const payload = {
+        BatchId: form.batchId,
+        Date: form.harvestDate,
+        FeildId: form.fieldId,
+        Vatiety: form.caneVariety,
+        Weightwithvehicle: parseFloat(form.sugarcaneWeightWithVehicle),
+        VehicleWeight: parseFloat(form.vehicleWeight),
+        NetWeight: parseFloat(form.actualSugarcaneWeight),
+        Caneage: form.caneAge,
+        Note: form.note,
+        Unit: form.storageUnit,
+      };
+
+      const res = await fetch(`${API_BASE}/api/batch/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to save batch");
+
+      toast.success("Batch logged successfully!");
+      navigate("/batch-list");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass =
     "w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-base text-slate-800 placeholder-slate-300 outline-none focus:border-green-800 focus:ring-1 focus:ring-green-800 transition";
-
-  const labelClass = "block text-[10px] font-bold tracking-widest text-slate-400 mb-1.5 uppercase";
+  const labelClass =
+    "block text-[10px] font-bold tracking-widest text-slate-400 mb-1.5 uppercase";
 
   return (
     <div className="flex h-screen font-sans bg-green-50 overflow-hidden">
@@ -41,7 +100,7 @@ export default function LogNewBatch() {
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 m-0">Log New Batch</h1>
             <p className="text-xs text-gray-500 mt-1">
-              Record feild havest date and sucrose measurements
+              Record field harvest date and sucrose measurements
             </p>
           </div>
           <div className="flex flex-col items-end gap-3">
@@ -52,14 +111,11 @@ export default function LogNewBatch() {
               <RefreshCw size={12} /> Refresh
             </button>
             <button
-              onClick={() => {
-                handleSubmit();
-                toast.success("Batch logged successfully!");
-                
-              }}
-              className="bg-green-900 hover:bg-green-800 text-white font-bold text-mid px-14 py-4 rounded-xl transition cursor-pointer"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-green-900 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-mid px-14 py-4 rounded-xl transition cursor-pointer"
             >
-              💾 Save Batch
+              {loading ? "Saving…" : "💾 Save Batch"}
             </button>
           </div>
         </div>
@@ -75,7 +131,7 @@ export default function LogNewBatch() {
 
               {/* Batch ID */}
               <div>
-                <label className={labelClass}>Batch ID</label>
+                <label className={labelClass}>Batch ID <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   placeholder="B-2024-149"
@@ -87,10 +143,10 @@ export default function LogNewBatch() {
 
               {/* Field ID */}
               <div>
-                <label className={labelClass}>Field ID</label>
+                <label className={labelClass}>Field ID <span className="text-red-400">*</span></label>
                 <input
                   type="text"
-                  placeholder="B-2024-149"
+                  placeholder="A-12"
                   value={form.fieldId}
                   onChange={(e) => handleChange("fieldId", e.target.value)}
                   className={inputClass}
@@ -99,10 +155,10 @@ export default function LogNewBatch() {
 
               {/* Sugarcane Weight With Vehicle */}
               <div>
-                <label className={labelClass}>Sugarcane Weight With Vehicle (Tonnes)</label>
+                <label className={labelClass}>Sugarcane Weight With Vehicle (Tonnes) <span className="text-red-400">*</span></label>
                 <input
                   type="number"
-                  placeholder="B-2024-149"
+                  placeholder="35"
                   value={form.sugarcaneWeightWithVehicle}
                   onChange={(e) => handleChange("sugarcaneWeightWithVehicle", e.target.value)}
                   className={inputClass}
@@ -111,10 +167,10 @@ export default function LogNewBatch() {
 
               {/* Actual Sugarcane Weight */}
               <div>
-                <label className={labelClass}>Actual Sugarcane Weight (Tonnes)</label>
+                <label className={labelClass}>Actual Sugarcane Weight / Net Weight (Tonnes) <span className="text-red-400">*</span></label>
                 <input
                   type="number"
-                  placeholder="B-2024-149"
+                  placeholder="24.5"
                   value={form.actualSugarcaneWeight}
                   onChange={(e) => handleChange("actualSugarcaneWeight", e.target.value)}
                   className={inputClass}
@@ -126,7 +182,7 @@ export default function LogNewBatch() {
                 <label className={labelClass}>Note</label>
                 <textarea
                   rows={3}
-                  placeholder="B-2024-149"
+                  placeholder="Optional notes about this batch..."
                   value={form.note}
                   onChange={(e) => handleChange("note", e.target.value)}
                   className={`${inputClass} resize-y min-h-[80px]`}
@@ -140,21 +196,18 @@ export default function LogNewBatch() {
 
               {/* Harvest Date */}
               <div>
-                <label className={labelClass}>Harvest Date</label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    placeholder="02/17/2026"
-                    value={form.harvestDate}
-                    onChange={(e) => handleChange("harvestDate", e.target.value)}
-                    className={`${inputClass} pr-10`}
-                  />
-                </div>
+                <label className={labelClass}>Harvest Date <span className="text-red-400">*</span></label>
+                <input
+                  type="date"
+                  value={form.harvestDate}
+                  onChange={(e) => handleChange("harvestDate", e.target.value)}
+                  className={`${inputClass} pr-10`}
+                />
               </div>
 
               {/* Cane Variety */}
               <div>
-                <label className={labelClass}>Cane Variety</label>
+                <label className={labelClass}>Cane Variety <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   placeholder="SL 96328"
@@ -166,10 +219,10 @@ export default function LogNewBatch() {
 
               {/* Vehicle Weight */}
               <div>
-                <label className={labelClass}>Vehicle Weight (Tonnes)</label>
+                <label className={labelClass}>Vehicle Weight (Tonnes) <span className="text-red-400">*</span></label>
                 <input
                   type="number"
-                  placeholder="25"
+                  placeholder="10.5"
                   value={form.vehicleWeight}
                   onChange={(e) => handleChange("vehicleWeight", e.target.value)}
                   className={inputClass}
@@ -178,10 +231,10 @@ export default function LogNewBatch() {
 
               {/* Cane Age */}
               <div>
-                <label className={labelClass}>Cane Age (Months)</label>
+                <label className={labelClass}>Cane Age (Months) <span className="text-red-400">*</span></label>
                 <input
                   type="number"
-                  placeholder="B-2024-149"
+                  placeholder="12"
                   value={form.caneAge}
                   onChange={(e) => handleChange("caneAge", e.target.value)}
                   className={inputClass}
@@ -190,7 +243,7 @@ export default function LogNewBatch() {
 
               {/* Storage Unit */}
               <div>
-                <label className={labelClass}>Storage Unit</label>
+                <label className={labelClass}>Storage Unit <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <select
                     value={form.storageUnit}

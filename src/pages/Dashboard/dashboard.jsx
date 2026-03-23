@@ -138,7 +138,7 @@ export default function Dashboard() {
 
           {/* Chart card */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <h4 className="text-sm font-bold text-gray-900 mb-3">Weekly Rendement Trend</h4>
+            <h4 className="text-sm font-bold text-gray-900 mb-3">Weekly AVG Rendement Trend</h4>
             <ResponsiveContainer width="100%" height={118}>
               <BarChart data={weeklyData} barSize={400} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <XAxis dataKey="day" axisLine={false} tickLine={false}

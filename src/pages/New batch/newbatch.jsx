@@ -18,7 +18,7 @@ export default function LogNewBatch() {
     vehicleWeight: "",
     actualSugarcaneWeight: "",
     caneAge: "",
-    note: "",
+    vehicleNo: "",
     storageUnit: "Unit A",
   });
 
@@ -59,7 +59,7 @@ export default function LogNewBatch() {
         VehicleWeight: parseFloat(form.vehicleWeight),
         NetWeight: parseFloat(form.actualSugarcaneWeight),
         Caneage: form.caneAge,
-        Note: form.note,
+        VehicleNo: form.vehicleNo,
         Unit: form.storageUnit,
       };
 
@@ -177,15 +177,15 @@ export default function LogNewBatch() {
                 />
               </div>
 
-              {/* Note */}
+              {/* Vehicle Number */}
               <div>
-                <label className={labelClass}>Note</label>
-                <textarea
-                  rows={3}
-                  placeholder="Optional notes about this batch..."
-                  value={form.note}
-                  onChange={(e) => handleChange("note", e.target.value)}
-                  className={`${inputClass} resize-y min-h-[80px]`}
+                <label className={labelClass}>Vehicle Number <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  placeholder="ABX-1243"
+                  value={form.vehicleNo}
+                  onChange={(e) => handleChange("vehicleNo", e.target.value)}
+                  className={inputClass}
                 />
               </div>
 
@@ -208,13 +208,27 @@ export default function LogNewBatch() {
               {/* Cane Variety */}
               <div>
                 <label className={labelClass}>Cane Variety <span className="text-red-400">*</span></label>
-                <input
-                  type="text"
-                  placeholder="SL 96328"
-                  value={form.caneVariety}
-                  onChange={(e) => handleChange("caneVariety", e.target.value)}
-                  className={inputClass}
-                />
+                <div className="relative">
+                  <select
+                    value={form.caneVariety}
+                    onChange={(e) => handleChange("caneVariety", e.target.value)}
+                    className={`${inputClass} appearance-none pr-10 cursor-pointer`}
+                  >
+                    <option value="">Select Cane Variety</option>
+                    <option value="SL 96 128">SL 96 128</option>
+                    <option value="SL 83 06">SL 83 06</option>
+                    <option value="SL 96 328">SL 96 328</option>
+                    <option value="SL 88 116">SL 88 116</option>
+                    <option value="SL 92 5588">SL 92 5588</option>
+                  </select>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="#94a3b8" strokeWidth="2"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </div>
 
               {/* Vehicle Weight */}
@@ -232,13 +246,33 @@ export default function LogNewBatch() {
               {/* Cane Age */}
               <div>
                 <label className={labelClass}>Cane Age (Months) <span className="text-red-400">*</span></label>
-                <input
-                  type="number"
-                  placeholder="12"
-                  value={form.caneAge}
-                  onChange={(e) => handleChange("caneAge", e.target.value)}
-                  className={inputClass}
-                />
+                <div className="relative">
+                  <select
+                    value={form.caneAge}
+                    onChange={(e) => handleChange("caneAge", e.target.value)}
+                    className={`${inputClass} appearance-none pr-10 cursor-pointer`}
+                  >
+                    <option value="">Select Cane Age</option>
+                    <option value="6">6 Months</option>
+                    <option value="7">7 Months</option>
+                    <option value="8">8 Months</option>
+                    <option value="9">9 Months</option>
+                    <option value="10">10 Months</option>
+                    <option value="11">11 Months</option>
+                    <option value="12">12 Months</option>
+                    <option value="13">13 Months</option>
+                    <option value="14">14 Months</option>
+                    <option value="15">15 Months</option>
+
+                  </select>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="#94a3b8" strokeWidth="2"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </div>
 
               {/* Storage Unit */}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { RefreshCw, Droplets, PenLine, FlaskConical, Box } from "lucide-react";
+import { Droplets, PenLine, FlaskConical, Box } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import Sidebar from "../../components/Sidebar";
+import RefreshButton from "../../components/RefreshButton";
 
 /* ─── DATA ─────────────────────────────────────────── */
 const weeklyData = [
@@ -82,12 +83,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-1.5 bg-green-100 hover:bg-green-200 text-green-900 text-xs font-semibold px-4 py-2 rounded-lg transition"
-            >
-              <RefreshCw size={12} /> Refresh
-            </button>
+            <RefreshButton />
             <span className="text-xs font-bold text-gray-900">{time}</span>
           </div>
         </div>

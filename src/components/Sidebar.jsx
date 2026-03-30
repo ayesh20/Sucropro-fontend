@@ -214,7 +214,9 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
       <NavItem icon={<ClipIcon />} label="All Batches"
         active={is("All Batches")} onClick={() => navigate("/batch-list")} />
       <NavItem icon={<CalcIcon />} label="Sucrose Calculation"
-        active={is("Sucrose Calculation")} onClick={() => navigate("/sucrose-calculation")} />
+        active={is("Sucrose Calculation")} onClick={() => navigate("/calculation")} />
+      <NavItem icon={<DocNav />} label="Registered Batches"
+        active={is("Registered Batches")} onClick={() => navigate("/registered-batches")} />
 
       {/* PREDICTIONS */}
       <SectionLabel text="PREDICTIONS" icon={<PredLabel />} color="#22c55e" />

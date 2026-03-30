@@ -5,14 +5,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 export default function AdminLogin() {
-    const [email, setEmail]               = useState('');
-    const [password, setPassword]         = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading]           = useState(false);
-    const [error, setError]               = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const navigate = useNavigate();
-    const API_URL  = import.meta.env.VITE_BACKEND_URL + "/api";
+    const API_URL = import.meta.env.VITE_BACKEND_URL + "/api";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -132,9 +132,9 @@ export default function AdminLogin() {
                         {error && (
                             <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" y1="8" x2="12" y2="12"/>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
                                 </svg>
                                 {error}
                             </div>
@@ -165,11 +165,7 @@ export default function AdminLogin() {
                                         className="block text-[10px] font-extrabold tracking-[1.4px] text-slate-400 uppercase">
                                         Password
                                     </label>
-                                    <button type="button"
-                                        onClick={() => toast.info('Forgot password feature coming soon!')}
-                                        className="text-xs text-green-700 hover:text-green-900 font-semibold transition-colors">
-                                        Forgot password?
-                                    </button>
+
                                 </div>
                                 <div className="relative">
                                     <input
@@ -206,7 +202,7 @@ export default function AdminLogin() {
 
                         </form>
 
-                       
+
 
                         <p className="text-center text-xs text-slate-400 mt-3">
                             Lanka Sugar Company (Pvt) Ltd

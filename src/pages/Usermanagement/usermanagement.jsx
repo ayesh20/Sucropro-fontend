@@ -33,6 +33,9 @@ export default function UserManagement() {
 
   const API_URL = import.meta.env.VITE_BACKEND_URL + "/api";
   const token   = localStorage.getItem("authToken");
+  const adminDataString = localStorage.getItem("adminData");
+  const adminData = adminDataString ? JSON.parse(adminDataString) : null;
+  const isSuperAdmin = adminData?.role === "Super Admin";
   const headers = { Authorization: `Bearer ${token}` };
 
   const handleChange = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -71,6 +74,10 @@ export default function UserManagement() {
 
   /* ── Add new admin ── */
   const handleAdd = async () => {
+    if (!isSuperAdmin) {
+      toast.error("Only Super Admins can add new users");
+      return;
+    }
     if (!form.Name || !form.email || !form.password) {
       toast.error("Please fill in all fields");
       return;
@@ -95,6 +102,14 @@ export default function UserManagement() {
   /* ── Update user ── */
   const handleUpdate = async () => {
     if (!selectedUser) { toast.error("Select a user to update"); return; }
+    if (!isSuperAdmin && selectedUser.role === "Super Admin") {
+      toast.error("You cannot modify a Super Admin profile");
+      return;
+    }
+    if (!isSuperAdmin && form.role === "Super Admin") {
+      toast.error("You cannot assign the Super Admin role");
+      return;
+    }
     setLoading(true);
     try {
       await axios.put(
@@ -274,17 +289,19 @@ export default function UserManagement() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <button
                 onClick={handleAdd}
-                disabled={loading || !!selectedUser}
-                className="py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                disabled={loading || !!selectedUser || !isSuperAdmin}
+                className="py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: "#14532d" }}
+                title={!isSuperAdmin ? "Only Super Admins can add users" : ""}
               >
                 {loading && !selectedUser ? "Adding..." : "Add user Admin"}
               </button>
               <button
                 onClick={handleUpdate}
-                disabled={loading || !selectedUser}
-                className="py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                disabled={loading || !selectedUser || (!isSuperAdmin && (selectedUser?.role === "Super Admin" || form.role === "Super Admin"))}
+                className="py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: "#14532d" }}
+                title={(!isSuperAdmin && (selectedUser?.role === "Super Admin" || form.role === "Super Admin")) ? "Cannot modify or assign Super Admin role" : ""}
               >
                 {loading && selectedUser ? "Updating..." : "Update User"}
               </button>

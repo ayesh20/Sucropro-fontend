@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Sidebar from "../../components/Sidebar";
+import RefreshButton from "../../components/RefreshButton";
 import Pagination from "../../components/Pagination";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
@@ -21,24 +22,58 @@ export default function AllBatches() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const fetchBatches = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("authToken");
-      const res = await fetch(`${API_BASE}/api/batch/get`, {
-        headers: { Authorization: `Bearer ${token}` },
+
+      const [batchRes, renRes] = await Promise.all([
+        fetch(`${API_BASE}/api/batch/get`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/rendement/get-rendement`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      const batchData = await batchRes.json();
+      const renData = await renRes.json();
+
+      if (!batchRes.ok) throw new Error(batchData.message);
+
+      const batchList = batchData.batches || [];
+      const renList = renData.data || [];
+
+      // Merge backend rendements into batches by BatchId
+      const mergedBatches = batchList.map(b => {
+        const ren = renList.find(r => r.BatchId === b.BatchId);
+        if (ren) {
+          return {
+            ...b,
+            Brix: ren.Brix,
+            Pol: ren.Pol,
+            ActualPol: ren.RealValue,
+            Ren: ren.Rendement,
+            Purity: ren.Purity,
+            Grade: ren.Grade
+          };
+        }
+        return {
+          ...b,
+          Brix: "—",
+          Pol: "—",
+          ActualPol: "—",
+          Ren: "—",
+          Purity: "—",
+          Grade: "—"
+        };
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      setBatches(data.batches || []);
+
+      setBatches(mergedBatches);
     } catch (err) {
-      toast.error("Failed to load batches");
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchBatches(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   // Filter logic
   useEffect(() => {
@@ -111,12 +146,7 @@ export default function AllBatches() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-3">
-            <button
-              onClick={fetchBatches}
-              className="flex items-center gap-1.5 bg-green-100 hover:bg-green-200 text-green-900 text-xs font-semibold px-4 py-2 rounded-lg transition"
-            >
-              <RefreshCw size={12} /> Refresh
-            </button>
+            <RefreshButton onClick={fetchData} />
             <button
               onClick={() => toast("Export PDF coming soon")}
               className="bg-green-900 hover:bg-green-800 text-white font-bold text-sm px-8 py-3 rounded-xl transition"
@@ -178,7 +208,7 @@ export default function AllBatches() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {["Batch ID", "Date", "Field", "Variety", "Weight (T)", "Brix*", "Pol%", "Ren", "Purity", "Actions"].map((h) => (
+                  {["Batch ID", "Date", "Field", "Variety", "Weight (T)", "Unit", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="text-left text-[10px] font-bold tracking-widest text-slate-400 uppercase pb-3 pr-4"
@@ -196,12 +226,13 @@ export default function AllBatches() {
                     <td className="py-3 pr-4 text-slate-600">{batch.FeildId}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Vatiety}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.NetWeight}</td>
-
-                    {/* Brix, Pol, Ren, Purity — from another collection, show dash */}
-                    <td className="py-3 pr-4 text-slate-300">—</td>
-                    <td className="py-3 pr-4 text-slate-300">—</td>
-                    <td className="py-3 pr-4 text-slate-300">—</td>
-                    <td className="py-3 pr-4 text-slate-300">—</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Unit}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Brix}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Pol}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.ActualPol}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Ren}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Purity}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.Grade}</td>
 
                     <td className="py-3">
                       <button

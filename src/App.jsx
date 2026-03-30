@@ -7,6 +7,8 @@ import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import LogNewBatch from "./pages/New batch/newbatch.jsx";
 import UserManagement from "./pages/Usermanagement/usermanagement.jsx";
 import AllBatches from "./pages/All batch/allbatch.jsx";
+import SucroseCalculation from "./pages/calculation/calculation.jsx";
+import RegisterBatch from "./pages/Register-Batch/register-batch.jsx";
 
 
 function App() {
@@ -36,6 +38,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new-batch" element={<LogNewBatch />} />
           <Route path="/batch-list" element={<AllBatches />} />
+          <Route path="/calculation" element={<SucroseCalculation />} />
+          <Route path="/registered-batches" element={<RegisterBatch />} />
 
 
 

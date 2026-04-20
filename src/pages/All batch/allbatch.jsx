@@ -27,41 +27,36 @@ export default function AllBatches() {
     try {
       const token = localStorage.getItem("authToken");
 
-      const [batchRes, renRes] = await Promise.all([
+      const [batchRes, renRes, weightRes] = await Promise.all([
         fetch(`${API_BASE}/api/batch/get`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE}/api/rendement/get-rendement`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_BASE}/api/rendement/get-rendement`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/weight/get-all`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const batchData = await batchRes.json();
       const renData = await renRes.json();
+      const weightData = await weightRes.json();
 
       if (!batchRes.ok) throw new Error(batchData.message);
 
       const batchList = batchData.batches || [];
       const renList = renData.data || [];
+      const weightList = weightData.weights || [];
 
-      // Merge backend rendements into batches by BatchId
+      // Merge backend rendements and weights into batches by BatchId
       const mergedBatches = batchList.map(b => {
         const ren = renList.find(r => r.BatchId === b.BatchId);
-        if (ren) {
-          return {
-            ...b,
-            Brix: ren.Brix,
-            Pol: ren.Pol,
-            ActualPol: ren.RealValue,
-            Ren: ren.Rendement,
-            Purity: ren.Purity,
-            Grade: ren.Grade
-          };
-        }
+        const weight = weightList.find(w => w.BatchId === b.BatchId);
         return {
           ...b,
-          Brix: "—",
-          Pol: "—",
-          ActualPol: "—",
-          Ren: "—",
-          Purity: "—",
-          Grade: "—"
+          Brix: ren ? ren.Brix : "—",
+          Pol: ren ? ren.Pol : "—",
+          ActualPol: ren ? ren.RealValue : "—",
+          Ren: ren ? ren.Rendement : "—",
+          Purity: ren ? ren.Purity : "—",
+          Grade: ren ? ren.Grade : "—",
+          NetWeight: weight && weight.NetWeight !== undefined ? weight.NetWeight : b.NetWeight || "—",
+          VehicleNo: weight && weight.VehicleNo ? weight.VehicleNo : b.VehicleNo || "—"
         };
       });
 
@@ -208,7 +203,7 @@ export default function AllBatches() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {["Batch ID", "Date", "Field", "Variety", "Weight (T)", "Unit", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
+                  {["Batch ID", "Date", "Field", "Variety", "Weight (T)", "Unit", "vehicle-No", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="text-left text-[10px] font-bold tracking-widest text-slate-400 uppercase pb-3 pr-4"
@@ -227,6 +222,7 @@ export default function AllBatches() {
                     <td className="py-3 pr-4 text-slate-600">{batch.Vatiety}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.NetWeight}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Unit}</td>
+                    <td className="py-3 pr-4 text-slate-600">{batch.VehicleNo}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Brix}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Pol}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.ActualPol}</td>

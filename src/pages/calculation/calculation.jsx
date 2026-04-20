@@ -18,7 +18,7 @@ export default function SucroseCalculation() {
   const fetchBatches = async () => {
     try {
       const token = localStorage.getItem("authToken");
-      
+
       const [batchRes, renRes] = await Promise.all([
         fetch(`${API_BASE}/api/batch/get`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE}/api/rendement/get-rendement`, { headers: { Authorization: `Bearer ${token}` } })
@@ -28,12 +28,12 @@ export default function SucroseCalculation() {
       const renData = await renRes.json();
 
       if (!batchRes.ok) throw new Error(batchData.message);
-      
+
       const batchList = batchData.batches || [];
       const renList = renData.data || [];
 
       // Filter out batches that already have a Rendement calculated
-      const pendingBatches = batchList.filter(b => 
+      const pendingBatches = batchList.filter(b =>
         !renList.some(r => r.BatchId === b.BatchId)
       );
 
@@ -95,16 +95,16 @@ export default function SucroseCalculation() {
         body: JSON.stringify({ BatchId: selectedBatchId, brix, pol })
       });
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.message || "Failed to calculate Randement");
-      
+
       setRendementRes(data.data);
       // Update Purity and RealValue just to sync fields in case user clicked "Calculate Now" entirely directly
       setPurity(data.data.purity);
       setValueFromDb(data.data.realValue);
 
       toast.success("Rendement successfully calculated and saved!", { id: tId });
-      
+
     } catch (err) {
       toast.error(err.message, { id: tId });
     }
@@ -204,7 +204,8 @@ export default function SucroseCalculation() {
             </div>
 
             {/* Calculate Now button FULL width */}
-            <button 
+            <label className="block text-[12px] font-extrabold tracking-[1.5px] text-slate-500 mb-2 uppercase">RENDEMENT</label>
+            <button
               onClick={handleCalculateRandement}
               className="w-full bg-[#0d4a36] hover:bg-[#0a3829] text-white font-bold text-sm px-4 py-4 rounded-xl transition flex justify-center items-center gap-2">
               <span className="text-yellow-400"><Zap fill="currentColor" size={16} /></span> Calculate Now

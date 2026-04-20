@@ -211,6 +211,8 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
       <SectionLabel text="SUCROSE" icon={<SucroseLabel />} color="#a855f7" />
       <NavItem icon={<PlusNavIcon />} label="Log New Batch"
         active={is("Log New Batch")} onClick={() => navigate("/new-batch")} />
+      <NavItem icon={<ClipIcon />} label="Submit Weight"
+        active={is("Log New Weight")} onClick={() => navigate("/new-weight")} />
       <NavItem icon={<ClipIcon />} label="All Batches"
         active={is("All Batches")} onClick={() => navigate("/batch-list")} />
       <NavItem icon={<CalcIcon />} label="Sucrose Calculation"

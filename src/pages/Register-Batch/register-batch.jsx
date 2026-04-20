@@ -22,40 +22,51 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "2-di
 export default function RegisterBatch() {
     /* Search phase */
     const [searchId, setSearchId] = useState("");
+    const [searchMode, setSearchMode] = useState("batchId"); // "batchId" | "farmerId"
     const [searching, setSearching] = useState(false);
-    const [batch, setBatch] = useState(null);          // fetched batch document
+    const [batch, setBatch] = useState(null);
+    const [weight, setWeight] = useState(null);
 
     /* New-vehicle phase */
     const [newWeightWithVehicle, setNewWeightWithVehicle] = useState("");
-    const [newVehicleWeight, setNewVehicleWeight] = useState("");
+    const [newVehicleNumber, setNewVehicleNumber] = useState("");
     const [updating, setUpdating] = useState(false);
-
-    /* Derived */
-    const newNetWeight =
-        newWeightWithVehicle !== "" && newVehicleWeight !== ""
-            ? Math.max(0, parseFloat(newWeightWithVehicle) - parseFloat(newVehicleWeight))
-            : null;
-
-    const totalNetWeight =
-        batch && newNetWeight !== null
-            ? parseFloat((batch.NetWeight + newNetWeight).toFixed(2))
-            : null;
 
 
     const handleSearch = async () => {
         const id = searchId.trim();
-        if (!id) { toast.error("Please enter a Batch ID"); return; }
+        if (!id) {
+            toast.error(searchMode === "batchId" ? "Please enter a Batch ID" : "Please enter a Farmer ID");
+            return;
+        }
 
         setSearching(true);
         setBatch(null);
+        setWeight(null);
         try {
             const token = localStorage.getItem("authToken");
-            const res = await fetch(`${API_BASE}/api/batch/find/${encodeURIComponent(id)}`, {
+
+            /* Choose endpoint based on search mode */
+            const endpoint = searchMode === "batchId"
+                ? `${API_BASE}/api/batch/find/${encodeURIComponent(id)}`
+                : `${API_BASE}/api/batch/find-by-farmer/${encodeURIComponent(id)}`;
+
+            const res = await fetch(endpoint, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Batch not found");
             setBatch(data);
+
+            /* Try to load associated weight record (optional, non-blocking) */
+            try {
+                const res2 = await fetch(`${API_BASE}/api/weight/find/${encodeURIComponent(data.BatchId)}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data2 = await res2.json();
+                if (res2.ok) setWeight(data2);
+            } catch (_) { /* weight record may not exist yet */ }
+
             toast.success("Batch loaded");
         } catch (err) {
             toast.error(err.message);
@@ -67,12 +78,8 @@ export default function RegisterBatch() {
 
     const handleUpdate = async () => {
         if (!batch) return;
-        if (!newWeightWithVehicle || !newVehicleWeight) {
-            toast.error("Enter both weight fields");
-            return;
-        }
-        if (newNetWeight === null || isNaN(newNetWeight)) {
-            toast.error("Invalid weight values");
+        if (!newWeightWithVehicle || !newVehicleNumber) {
+            toast.error("Enter both Weight with Vehicle and Vehicle Number");
             return;
         }
 
@@ -80,24 +87,42 @@ export default function RegisterBatch() {
         try {
             const token = localStorage.getItem("authToken");
             const res = await fetch(
-                `${API_BASE}/api/batch/update-weight/${encodeURIComponent(batch.BatchId)}`,
+                `${API_BASE}/api/batch/update-delivery/${encodeURIComponent(batch.BatchId)}`,
                 {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ newNetWeight }),
+                    body: JSON.stringify({ Weightwithvehicle: newWeightWithVehicle, VehicleNo: newVehicleNumber, Date: new Date().toISOString() }),
                 }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Update failed");
 
-            toast.success("Batch weight updated successfully!");
+            // Only attempt weight update if there is a weight object backing it contextually in state
+            if (weight) {
+                const resWeight = await fetch(
+                    `${API_BASE}/api/weight/update-delivery/${encodeURIComponent(batch.BatchId)}`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ Weightwithvehicle: newWeightWithVehicle, VehicleNo: newVehicleNumber, Date: new Date().toISOString() }),
+                    }
+                );
+                const dataWeight = await resWeight.json();
+                if (!resWeight.ok) throw new Error(dataWeight.message || "Weight schema update failed");
+                setWeight(dataWeight.weight);
+            }
+
+            toast.success("Delivery details successfully updated in all schemas!");
 
             setBatch(data.batch);
             setNewWeightWithVehicle("");
-            setNewVehicleWeight("");
+            setNewVehicleNumber("");
         } catch (err) {
             toast.error(err.message);
         } finally {
@@ -108,8 +133,9 @@ export default function RegisterBatch() {
     const handleReset = () => {
         setSearchId("");
         setBatch(null);
+        setWeight(null);
         setNewWeightWithVehicle("");
-        setNewVehicleWeight("");
+        setNewVehicleNumber("");
     };
 
     const inputClass =
@@ -140,12 +166,37 @@ export default function RegisterBatch() {
                     <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">
                         Step 1 — Find Batch
                     </p>
+
+                    {/* ── Search mode toggle ── */}
+                    <div className="flex gap-2 mb-4">
+                        {[
+                            { key: "batchId",  label: "Batch ID" },
+                            { key: "farmerId", label: "Farmer ID" },
+                        ].map(({ key, label }) => (
+                            <button
+                                key={key}
+                                onClick={() => { setSearchMode(key); setSearchId(""); setBatch(null); setWeight(null); }}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition ${
+                                    searchMode === key
+                                        ? "bg-green-900 text-white border-green-900"
+                                        : "bg-white text-slate-500 border-slate-200 hover:border-green-700 hover:text-green-800"
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex gap-3">
                         <div className="flex-1 relative">
                             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             <input
                                 type="text"
-                                placeholder="Enter Batch ID (e.g. B-2024-149)"
+                                placeholder={
+                                    searchMode === "batchId"
+                                        ? "Enter Batch ID  (e.g. B-2024-149)"
+                                        : "Enter Farmer ID (e.g. F-001)"
+                                }
                                 value={searchId}
                                 onChange={(e) => setSearchId(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -165,12 +216,17 @@ export default function RegisterBatch() {
                                     Searching…
                                 </>
                             ) : (
-                                <>
-                                    <Search size={14} /> Search
-                                </>
+                                <><Search size={14} /> Search</>
                             )}
                         </button>
                     </div>
+
+                    {/* Hint text under search bar */}
+                    {searchMode === "farmerId" && (
+                        <p className="text-[11px] text-slate-400 mt-2.5 pl-1">
+                            💡 Searching by Farmer ID loads the most recent batch registered under that farmer.
+                        </p>
+                    )}
                 </div>
 
                 {/* ══════════════════════════════════════════
@@ -196,8 +252,7 @@ export default function RegisterBatch() {
                                 <InfoRow label="Cane Variety" value={batch.Vatiety} />
                                 <InfoRow label="Cane Age (months)" value={batch.Caneage} />
                                 <InfoRow label="Storage Unit" value={batch.Unit} />
-                                <InfoRow label="Weight with Vehicle (T)" value={fmt(batch.Weightwithvehicle)} />
-                                <InfoRow label="Vehicle Weight (T)" value={fmt(batch.VehicleWeight)} />
+
                             </div>
 
                             {/* Current net weight highlight */}
@@ -205,7 +260,7 @@ export default function RegisterBatch() {
                                 <Scale size={22} className="text-green-700 shrink-0" />
                                 <div>
                                     <p className="text-[10px] font-bold tracking-widest uppercase text-green-600">Current Net Weight</p>
-                                    <p className="text-2xl font-black text-green-900">{fmt(batch.NetWeight)} <span className="text-sm font-semibold">Tonnes</span></p>
+                                    <p className="text-2xl font-black text-green-900">{fmt(weight?.NetWeight)} <span className="text-sm font-semibold">Tonnes</span></p>
                                 </div>
                             </div>
                         </div>
@@ -220,7 +275,7 @@ export default function RegisterBatch() {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-                                {/* Weight with vehicle */}
+                                {/* update weight with vehicle */}
                                 <div>
                                     <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-1.5">
                                         Weight with Vehicle (Tonnes) <span className="text-red-400">*</span>
@@ -236,54 +291,27 @@ export default function RegisterBatch() {
                                     />
                                 </div>
 
-                                {/* Vehicle weight */}
+                                {/* Vehicle Number */}
                                 <div>
                                     <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-1.5">
-                                        Vehicle Weight (Tonnes) <span className="text-red-400">*</span>
+                                        Vehicle Number <span className="text-red-400">*</span>
                                     </label>
                                     <input
-                                        type="number"
+                                        type="text"
                                         min="0"
                                         step="0.01"
-                                        placeholder="e.g. 8.00"
-                                        value={newVehicleWeight}
-                                        onChange={(e) => setNewVehicleWeight(e.target.value)}
+                                        placeholder="e.g. LM-7865"
+                                        value={newVehicleNumber}
+                                        onChange={(e) => setNewVehicleNumber(e.target.value)}
                                         className={inputClass}
                                     />
                                 </div>
                             </div>
 
-                            {/* Live calculation summary */}
-                            {newNetWeight !== null && !isNaN(newNetWeight) && (
-                                <div className="grid grid-cols-3 gap-4 mb-6">
-                                    {/* New net weight */}
-                                    <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl py-4 px-3 text-center">
-                                        <p className="text-[9px] font-bold tracking-widest uppercase text-slate-400 mb-1">New Net Weight</p>
-                                        <p className="text-xl font-black text-slate-800">{fmt(newNetWeight)}</p>
-                                        <p className="text-xs text-slate-400">Tonnes</p>
-                                    </div>
-
-                                    {/* Arrow */}
-                                    <div className="flex items-center justify-center">
-                                        <div className="flex flex-col items-center gap-1 text-slate-300">
-                                            <ChevronRight size={28} className="text-green-600 animate-pulse" />
-                                            <span className="text-[9px] font-bold tracking-widest uppercase text-slate-400">Added to</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Total net weight */}
-                                    <div className="flex flex-col items-center justify-center bg-green-900 rounded-xl py-4 px-3 text-center shadow-lg shadow-green-900/20">
-                                        <p className="text-[9px] font-bold tracking-widest uppercase text-green-300 mb-1">Total Net Weight</p>
-                                        <p className="text-xl font-black text-white">{fmt(totalNetWeight)}</p>
-                                        <p className="text-xs text-green-300">Tonnes</p>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Update button */}
                             <button
                                 onClick={handleUpdate}
-                                disabled={updating || newNetWeight === null || isNaN(newNetWeight)}
+                                disabled={updating || !newWeightWithVehicle || !newVehicleNumber}
                                 className="w-full flex items-center justify-center gap-2 bg-green-900 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition text-sm shadow-md shadow-green-900/20"
                             >
                                 {updating ? (
@@ -296,7 +324,7 @@ export default function RegisterBatch() {
                                 ) : (
                                     <>
                                         <Scale size={16} />
-                                        Update Batch Weight
+                                        Update Batch Delivery
                                     </>
                                 )}
                             </button>
@@ -308,7 +336,11 @@ export default function RegisterBatch() {
                 {!batch && !searching && (
                     <div className="flex flex-col items-center justify-center py-20 text-center text-slate-400">
                         <Package size={48} className="mb-4 text-slate-200" />
-                        <p className="text-sm font-semibold">Enter a Batch ID above and click Search</p>
+                        <p className="text-sm font-semibold">
+                            {searchMode === "batchId"
+                                ? "Enter a Batch ID above and click Search"
+                                : "Enter a Farmer ID above and click Search"}
+                        </p>
                         <p className="text-xs mt-1">Batch details and weight update form will appear here</p>
                     </div>
                 )}

@@ -9,6 +9,7 @@ import UserManagement from "./pages/Usermanagement/usermanagement.jsx";
 import AllBatches from "./pages/All batch/allbatch.jsx";
 import SucroseCalculation from "./pages/calculation/calculation.jsx";
 import RegisterBatch from "./pages/Register-Batch/register-batch.jsx";
+import LogNewWeight from "./pages/weight/newWeight.jsx";
 
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/batch-list" element={<AllBatches />} />
           <Route path="/calculation" element={<SucroseCalculation />} />
           <Route path="/registered-batches" element={<RegisterBatch />} />
+          <Route path="/new-weight" element={<LogNewWeight />} />
 
 
 

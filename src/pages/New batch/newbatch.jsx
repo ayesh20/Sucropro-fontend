@@ -132,6 +132,41 @@ export default function LogNewBatch() {
   const billRef = useRef(null);
   const printedAt = new Date().toLocaleString("en-GB");
 
+  /* existing print search state */
+  const [searchPrintId, setSearchPrintId] = useState("");
+  const [searchingPrint, setSearchingPrint] = useState(false);
+
+  const handleSearchPrint = async () => {
+    const id = searchPrintId.trim();
+    if (!id) {
+      toast.error("Please enter a Batch ID or Farmer ID");
+      return;
+    }
+    setSearchingPrint(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      // Try Batch ID first
+      let res = await fetch(`${API_BASE}/api/batch/find/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+      let data = await res.json();
+
+      // If not found by Batch ID, try by Farmer ID
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/batch/find-by-farmer/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+        data = await res.json();
+        if (!res.ok) throw new Error("Batch or Farmer not found");
+      }
+
+      setSavedBatch(data);
+      setShowBill(true);
+      toast.success("Existing batch loaded");
+      setSearchPrintId("");
+    } catch (err) {
+      toast.error(err.message || "Failed to find batch");
+    } finally {
+      setSearchingPrint(false);
+    }
+  };
+
   const handleChange = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
 
@@ -217,13 +252,41 @@ export default function LogNewBatch() {
             >
               <RefreshCw size={12} /> Refresh
             </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-green-900 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm px-10 py-3.5 rounded-xl transition cursor-pointer"
-            >
-              {loading ? "Saving…" : "💾 Save Batch"}
-            </button>
+            <div className="flex gap-3">
+              {/* Search to Print Existing */}
+              <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-green-700 focus-within:ring-1 focus-within:ring-green-700 transition shadow-sm h-[48px]">
+                <input
+                  type="text"
+                  placeholder="Print existing (Batch/Farmer ID)"
+                  value={searchPrintId}
+                  onChange={(e) => setSearchPrintId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearchPrint()}
+                  className="px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none w-60 h-full"
+                />
+                <button
+                  onClick={handleSearchPrint}
+                  disabled={searchingPrint}
+                  title="Search & Print Existing"
+                  className="bg-slate-50 hover:bg-slate-200 text-slate-700 px-4 h-full border-l border-slate-200 transition flex items-center justify-center disabled:opacity-50"
+                >
+                  {searchingPrint ? (
+                    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                  ) : (
+                    <Printer size={16} />
+                  )}
+                </button>
+              </div>
+
+              {/* Print Current Form State */}
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-green-900 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm px-10 py-3.5 rounded-xl transition cursor-pointer"
+              >
+                {loading ? "Saving…" : "💾 Save Batch"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -361,10 +424,10 @@ export default function LogNewBatch() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <CheckCircle size={18} className="text-green-600" />
-                <span className="font-bold text-slate-800 text-sm">Batch Saved — Farmer Receipt</span>
+                <span className="font-bold text-slate-800 text-sm"> — Farmer Receipt — </span>
               </div>
               <button
-                onClick={() => { setShowBill(false); navigate("/batch-list"); }}
+                onClick={() => { setShowBill(false); }}
                 className="text-slate-400 hover:text-slate-700 transition"
               >
                 <X size={20} />
@@ -390,10 +453,10 @@ export default function LogNewBatch() {
                 <Printer size={16} /> Print Receipt
               </button>
               <button
-                onClick={() => { setShowBill(false); navigate("/batch-list"); }}
+                onClick={() => { setShowBill(false); }}
                 className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm"
               >
-                Skip & Continue
+                Close
               </button>
             </div>
 

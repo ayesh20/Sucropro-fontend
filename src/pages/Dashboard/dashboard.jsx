@@ -4,11 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import Sidebar from "../../components/Sidebar";
 import RefreshButton from "../../components/RefreshButton";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 /* ─── DATA ─────────────────────────────────────────── */
-const weeklyData = [
-  { day: "Mon", v: 62 }, { day: "Tue", v: 74 }, { day: "wed", v: 78 },
-  { day: "Thu", v: 70 }, { day: "Fri", v: 88 }, { day: "Sat", v: 80 }, { day: "Sun", v: 84 },
-];
 
 const storageUnits = [
   { name: "Unit A", pct: 56 },
@@ -34,6 +32,85 @@ const batchCards = [
 export default function Dashboard() {
   const [time, setTime]       = useState("");
   const [dateStr, setDateStr] = useState("");
+  const [latestRendement, setLatestRendement] = useState(null);
+  const [weeklyChartData, setWeeklyChartData] = useState([]);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const [batchRes, renRes, weightRes] = await Promise.all([
+        fetch(`${API_BASE}/api/batch/get`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/rendement/get-rendement`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/weight/get-all`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      const renJson = await renRes.json();
+      if (renRes.ok && renJson.data) {
+        // 1. Latest Rendement by real calculation date
+        const sorted = [...renJson.data].sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+        if (sorted.length > 0) setLatestRendement(sorted[0]);
+      }
+
+      if (batchRes.ok && weightRes.ok && renRes.ok) {
+        const batchJson = await batchRes.json();
+        const weightJson = await weightRes.json();
+
+        const batchList = batchJson.batches || [];
+        const renList = renJson.data || [];
+        const weightList = weightJson.weights || [];
+
+        // 2. Calculate averages using BATCH date to place it on the correct chart day
+        const chartData = [];
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon...
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        
+        const monday = new Date();
+        monday.setDate(today.getDate() + diffToMonday);
+        const daysAbbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          const dayName = daysAbbr[i];
+
+          let daySum = 0;
+          let count = 0;
+
+          batchList.forEach(b => {
+             // Match allbatches.jsx date logic
+             let finalBatchDate = b.Date;
+             const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
+             if (batchWeights.length > 0) {
+               const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date) - new Date(w1.Date));
+               if (sortedWeights[0].Date) finalBatchDate = sortedWeights[0].Date;
+             }
+             
+             const rd = new Date(finalBatchDate);
+             if (rd.getDate() === d.getDate() && rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) {
+                 // Batch belongs to this day. Grab its latest rendement.
+                 const ren = renList.find(r => r.BatchId === b.BatchId);
+                 if (ren && !isNaN(parseFloat(ren.Rendement))) {
+                     daySum += parseFloat(ren.Rendement);
+                     count++;
+                 }
+             }
+          });
+
+          if (count > 0) {
+            // Using toFixed(1) for cleaner display
+            const avg = Number((daySum / count).toFixed(1));
+            chartData.push({ day: dayName, v: avg });
+          } else {
+            chartData.push({ day: dayName, v: null });
+          }
+        }
+        setWeeklyChartData(chartData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch dashboard data", err);
+    }
+  };
 
   useEffect(() => {
     const tick = () => {
@@ -48,6 +125,7 @@ export default function Dashboard() {
     };
     tick();
     const id = setInterval(tick, 1000);
+    fetchData();
     return () => clearInterval(id);
   }, []);
 
@@ -112,9 +190,16 @@ export default function Dashboard() {
         </div>
 
         {/* ── Previous Batch Details ── */}
-        <h3 className="text-sm font-bold text-gray-900 mb-3">Previous Batch Details</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-3">
+          Latest Rendement Details {latestRendement ? `(Batch: ${latestRendement.BatchId})` : ""}
+        </h3>
         <div className="grid grid-cols-4 gap-3 mb-5">
-          {batchCards.map((c, i) => (
+          {[
+            { iconEl: <Droplets size={17} color="#60a5fa" />, iconBg: "bg-blue-100",   val: latestRendement ? latestRendement.Brix.toString() : "—",  label: "BRIX VALUE",  sub: "Concentration of dissolved solids" },
+            { iconEl: <PenLine  size={17} color="#34d399" />, iconBg: "bg-green-100",  val: latestRendement ? `${latestRendement.Pol}°` : "—", label: "POL VALUE",   sub: "Sucrose polarimetry" },
+            { iconEl: <FlaskConical size={17} color="#94a3b8" />, iconBg: "bg-slate-100", val: latestRendement ? `${latestRendement.Purity}%` : "—",  label: "PURITY",    sub: "Pol value / Brix value" },
+            { iconEl: <Box size={17} color="#b45309" />,      iconBg: "bg-amber-100",  val: latestRendement ? latestRendement.Rendement.toString() : "—",   label: "RENDEMENT",  sub: "Extractable sugar yield" },
+          ].map((c, i) => (
             <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
               <div className={`w-8 h-8 rounded-lg ${c.iconBg} flex items-center justify-center mb-2`}>
                 {c.iconEl}
@@ -122,8 +207,8 @@ export default function Dashboard() {
               <div className="text-2xl font-extrabold text-gray-900 leading-none">{c.val}</div>
               <div className="text-[9px] font-bold tracking-widest text-slate-400 mt-1 mb-0.5 uppercase">{c.label}</div>
               <div className="text-[10px] text-slate-300 mb-2">{c.sub}</div>
-              <span className="inline-block bg-green-100 text-green-700 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
-                + 1.3 vs previous batch
+              <span className="inline-block bg-green-100 text-green-700 text-[10px] font-semibold px-2.5 py-0.5 rounded-full" title={latestRendement && latestRendement.date ? new Date(latestRendement.date).toLocaleString() : ''}>
+                {latestRendement && latestRendement.date ? new Date(latestRendement.date).toLocaleDateString() : '—'}
               </span>
             </div>
           ))}
@@ -136,16 +221,17 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <h4 className="text-sm font-bold text-gray-900 mb-3">Weekly AVG Rendement Trend</h4>
             <ResponsiveContainer width="100%" height={118}>
-              <BarChart data={weeklyData} barSize={400} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+              <BarChart data={weeklyChartData} barSize={400} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <XAxis dataKey="day" axisLine={false} tickLine={false}
                   tick={{ fontSize: 11, fill: "#94a3b8" }} />
                 <YAxis hide />
                 <Tooltip
                   cursor={{ fill: "rgba(0,0,0,0.03)" }}
                   contentStyle={{ borderRadius: 7, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontSize: 11 }}
+                  formatter={(value) => [`${value}`, 'Avg Rendement']}
                 />
                 <Bar dataKey="v" radius={[4, 4, 0, 0]}>
-                  {weeklyData.map((_, idx) => (
+                  {weeklyChartData.map((_, idx) => (
                     <Cell key={idx} fill="#29A379" />
                   ))}
                 </Bar>

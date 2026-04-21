@@ -64,7 +64,14 @@ export default function RegisterBatch() {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data2 = await res2.json();
-                if (res2.ok) setWeight(data2);
+                if (res2.ok) {
+                    if (Array.isArray(data2)) {
+                        const totalNetWeight = data2.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
+                        setWeight({ ...data2[0], NetWeight: totalNetWeight });
+                    } else {
+                        setWeight(data2);
+                    }
+                }
             } catch (_) { /* weight record may not exist yet */ }
 
             toast.success("Batch loaded");
@@ -115,7 +122,7 @@ export default function RegisterBatch() {
                 );
                 const dataWeight = await resWeight.json();
                 if (!resWeight.ok) throw new Error(dataWeight.message || "Weight schema update failed");
-                setWeight(dataWeight.weight);
+                setWeight(prev => ({ ...prev, ...dataWeight.weight, NetWeight: prev.NetWeight }));
             }
 
             toast.success("Delivery details successfully updated in all schemas!");

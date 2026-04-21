@@ -14,6 +14,76 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
+function exportAllBatchesPDF(batches) {
+  const win = window.open("", "_blank");
+  const tableRows = batches.map(b => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.BatchId}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Date ? new Date(b.Date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.FeildId}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Vatiety}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${b.NetWeight}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.VehicleNo}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Brix}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Pol}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.ActualPol}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Ren}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Purity}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${b.Grade}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>All Batches Report</title>
+      <style>
+        body { font-family: sans-serif; padding: 30px; color: #1e293b; background: white; }
+        .header { text-align: center; border-bottom: 2px solid #166534; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { color: #166534; margin: 0 0 10px 0; font-size: 24px; font-weight: 800; }
+        .header p { margin: 0; color: #64748b; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #f8fafc; padding: 12px 8px; border-bottom: 2px solid #e2e8f0; text-align: left; color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🌿 LANKA SUGAR COMPANY (PVT) LTD</h1>
+        <p>All Batches Report &nbsp;·&nbsp; Printed: ${new Date().toLocaleString("en-GB")}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Batch ID</th>
+            <th>Date</th>
+            <th>Field</th>
+            <th>Variety</th>
+            <th>Total Weight(T)</th>
+            <th>Vehicle No</th>
+            <th>Brix*</th>
+            <th>Pol%</th>
+            <th>AcPol%</th>
+            <th>Ren</th>
+            <th>Purity</th>
+            <th>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 500);
+}
+
 export default function AllBatches() {
   const [batches, setBatches] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -46,17 +116,38 @@ export default function AllBatches() {
       // Merge backend rendements and weights into batches by BatchId
       const mergedBatches = batchList.map(b => {
         const ren = renList.find(r => r.BatchId === b.BatchId);
-        const weight = weightList.find(w => w.BatchId === b.BatchId);
+
+        // Find all weights for this batch ID
+        const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
+
+        let totalNetWeight = b.NetWeight || "—";
+        let latestDate = b.Date;
+        let vehicleNo = b.VehicleNo || "—";
+
+        if (batchWeights.length > 0) {
+          totalNetWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
+
+          // Sort weights by date descending to get the latest date and vehicle no
+          const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date) - new Date(w1.Date));
+          if (sortedWeights[0].Date) {
+            latestDate = sortedWeights[0].Date;
+          }
+          if (sortedWeights[0].VehicleNo) {
+            vehicleNo = sortedWeights[0].VehicleNo;
+          }
+        }
+
         return {
           ...b,
+          Date: latestDate,
           Brix: ren ? ren.Brix : "—",
           Pol: ren ? ren.Pol : "—",
           ActualPol: ren ? ren.RealValue : "—",
           Ren: ren ? ren.Rendement : "—",
           Purity: ren ? ren.Purity : "—",
           Grade: ren ? ren.Grade : "—",
-          NetWeight: weight && weight.NetWeight !== undefined ? weight.NetWeight : b.NetWeight || "—",
-          VehicleNo: weight && weight.VehicleNo ? weight.VehicleNo : b.VehicleNo || "—"
+          NetWeight: totalNetWeight,
+          VehicleNo: vehicleNo
         };
       });
 
@@ -143,7 +234,7 @@ export default function AllBatches() {
           <div className="flex flex-col items-end gap-3">
             <RefreshButton onClick={fetchData} />
             <button
-              onClick={() => toast("Export PDF coming soon")}
+              onClick={() => exportAllBatchesPDF(filtered)}
               className="bg-green-900 hover:bg-green-800 text-white font-bold text-sm px-8 py-3 rounded-xl transition"
             >
               Export pdf
@@ -203,7 +294,7 @@ export default function AllBatches() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {["Batch ID", "Date", "Field", "Variety", "Weight (T)", "Unit", "vehicle-No", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
+                  {["Batch ID", "Last Date", "Field", "Variety", "Total Weight(T)", "Unit", "vehicle-No", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="text-left text-[10px] font-bold tracking-widest text-slate-400 uppercase pb-3 pr-4"
@@ -215,12 +306,12 @@ export default function AllBatches() {
               </thead>
               <tbody>
                 {paginated.map((batch) => (
-                  <tr key={batch._id} className="border-b border-slate-50 hover:bg-slate-50 transition">
+                  <tr key={batch._id} className="border-b  border-slate-50 hover:bg-slate-50 transition">
                     <td className="py-3 pr-4 font-semibold text-slate-800">{batch.BatchId}</td>
                     <td className="py-3 pr-4 text-slate-600">{formatDate(batch.Date)}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.FeildId}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Vatiety}</td>
-                    <td className="py-3 pr-4 text-slate-600">{batch.NetWeight}</td>
+                    <td className="py-3 pr-4 text-slate-600 text-center">{batch.NetWeight}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Unit}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.VehicleNo}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Brix}</td>

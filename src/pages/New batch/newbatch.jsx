@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { RefreshCw, Printer, X, CheckCircle, Leaf } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -116,7 +116,7 @@ export default function LogNewBatch() {
 
   const [form, setForm] = useState({
     batchId: "",
-    harvestDate: "",
+    harvestDate: new Date().toISOString().split("T")[0],
     fieldId: "",
     farmerId: "",
     caneVariety: "",
@@ -125,6 +125,69 @@ export default function LogNewBatch() {
     vehicleNo: "",
     storageUnit: "Unit A",
   });
+
+  const THRESHOLD = 2940; // 98% of 3000 Tons
+  const [unitWeights, setUnitWeights] = useState({ "Unit A": 0, "Unit B": 0, "Unit C": 0 });
+  const [activeUnit, setActiveUnit] = useState("Unit A");
+
+  useEffect(() => {
+    const fetchStorage = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const [batchRes, weightRes] = await Promise.all([
+          fetch(`${API_BASE}/api/batch/get`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE}/api/weight/get-all`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        if (batchRes.ok && weightRes.ok) {
+          const batchJson = await batchRes.json();
+          const weightJson = await weightRes.json();
+
+          const batchList = batchJson.batches || [];
+          const weightList = weightJson.weights || [];
+
+          const currentWeights = { "Unit A": 0, "Unit B": 0, "Unit C": 0 };
+          const nowMs = Date.now();
+
+          batchList.forEach(b => {
+            const unit = b.Unit;
+            if (currentWeights.hasOwnProperty(unit)) {
+              let batchTotalWeight = parseFloat(b.NetWeight) || 0;
+              const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
+              
+              let finalBatchDate = b.Date || b.createdAt;
+              if (batchWeights.length > 0) {
+                batchTotalWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
+                const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date || w2.createdAt) - new Date(w1.Date || w1.createdAt));
+                if (sortedWeights[0].Date || sortedWeights[0].createdAt) finalBatchDate = sortedWeights[0].Date || sortedWeights[0].createdAt;
+              }
+
+              // Only count batches from the last 24 hours
+              const batchTimeMs = new Date(finalBatchDate).getTime();
+              if (batchTimeMs >= nowMs - 24 * 60 * 60 * 1000) {
+                currentWeights[unit] += batchTotalWeight;
+              }
+            }
+          });
+
+          setUnitWeights(currentWeights);
+
+          let currentActive = "Unit A";
+          if (currentWeights["Unit A"] >= THRESHOLD) {
+            currentActive = "Unit B";
+          }
+          if (currentWeights["Unit A"] >= THRESHOLD && currentWeights["Unit B"] >= THRESHOLD) {
+            currentActive = "Unit C";
+          }
+
+          setActiveUnit(currentActive);
+          setForm(prev => ({ ...prev, storageUnit: currentActive }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch storage data", err);
+      }
+    };
+    fetchStorage();
+  }, []);
 
   /* bill modal state */
   const [savedBatch, setSavedBatch] = useState(null);
@@ -399,12 +462,19 @@ export default function LogNewBatch() {
                   <select value={form.storageUnit}
                     onChange={(e) => handleChange("storageUnit", e.target.value)}
                     className={`${inputClass} appearance-none pr-10 cursor-pointer`}>
-                    <option value="Unit A">Unit A</option>
-                    <option value="Unit B">Unit B</option>
-                    <option value="Unit C">Unit C</option>
+                    <option value="Unit A" disabled={activeUnit !== "Unit A"}>
+                      Unit A {activeUnit !== "Unit A" ? (unitWeights["Unit A"] >= THRESHOLD ? "(Full)" : "(Locked)") : `(${unitWeights["Unit A"].toFixed(1)} T)`}
+                    </option>
+                    <option value="Unit B" disabled={activeUnit !== "Unit B"}>
+                      Unit B {activeUnit !== "Unit B" ? (unitWeights["Unit B"] >= THRESHOLD ? "(Full)" : "(Locked)") : `(${unitWeights["Unit B"].toFixed(1)} T)`}
+                    </option>
+                    <option value="Unit C" disabled={activeUnit !== "Unit C"}>
+                      Unit C {activeUnit !== "Unit C" ? "(Locked)" : `(${unitWeights["Unit C"].toFixed(1)} T)`}
+                    </option>
                   </select>
                   {chevronSvg}
                 </div>
+
               </div>
 
             </div>

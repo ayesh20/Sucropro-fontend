@@ -6,34 +6,32 @@ import RefreshButton from "../../components/RefreshButton";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
-/* ─── DATA ─────────────────────────────────────────── */
-
-const storageUnits = [
-  { name: "Unit A", pct: 56 },
-  { name: "Unit B", pct: 56 },
-  { name: "Unit C", pct: 56 },
-];
-
 const systemStatuses = [
-  { label: "Sucrose Calculation",  status: "Online",  bg: "bg-green-100",  text: "text-green-700" },
-  { label: "Storage Monitor",      status: "Online",  bg: "bg-green-100",  text: "text-green-700" },
-  { label: "ML Prediction Model",  status: "Running", bg: "bg-yellow-100", text: "text-yellow-700" },
-  { label: "Database Sync",        status: "Working", bg: "bg-amber-100",  text: "text-amber-600" },
+  { label: "Sucrose Calculation", status: "Online", bg: "bg-green-100", text: "text-green-700" },
+  { label: "Storage Monitor", status: "Online", bg: "bg-green-100", text: "text-green-700" },
+  { label: "ML Prediction Model", status: "Running", bg: "bg-yellow-100", text: "text-yellow-700" },
+  { label: "Database Sync", status: "Working", bg: "bg-amber-100", text: "text-amber-600" },
 ];
 
 const batchCards = [
-  { iconEl: <Droplets size={17} color="#60a5fa" />, iconBg: "bg-blue-100",   val: "17.4",  label: "BRIX VALUE",  sub: "Concentration of dissolved solids" },
-  { iconEl: <PenLine  size={17} color="#34d399" />, iconBg: "bg-green-100",  val: "16.8°", label: "POL VALUE",   sub: "Sucrose polarimetry" },
-  { iconEl: <FlaskConical size={17} color="#94a3b8" />, iconBg: "bg-slate-100", val: "2.3%",  label: "PURIETY",    sub: "Pol value / Brix value" },
-  { iconEl: <Box size={17} color="#b45309" />,      iconBg: "bg-amber-100",  val: "7.3",   label: "RANDEMENT",  sub: "Extractable suger yield" },
+  { iconEl: <Droplets size={17} color="#60a5fa" />, iconBg: "bg-blue-100", val: "17.4", label: "BRIX VALUE", sub: "Concentration of dissolved solids" },
+  { iconEl: <PenLine size={17} color="#34d399" />, iconBg: "bg-green-100", val: "16.8°", label: "POL VALUE", sub: "Sucrose polarimetry" },
+  { iconEl: <FlaskConical size={17} color="#94a3b8" />, iconBg: "bg-slate-100", val: "2.3%", label: "PURIETY", sub: "Pol value / Brix value" },
+  { iconEl: <Box size={17} color="#b45309" />, iconBg: "bg-amber-100", val: "7.3", label: "RANDEMENT", sub: "Extractable suger yield" },
 ];
 
 
 export default function Dashboard() {
-  const [time, setTime]       = useState("");
+  const [time, setTime] = useState("");
   const [dateStr, setDateStr] = useState("");
   const [latestRendement, setLatestRendement] = useState(null);
   const [weeklyChartData, setWeeklyChartData] = useState([]);
+  const [weekRangeStr, setWeekRangeStr] = useState("");
+  const [storageUnitsData, setStorageUnitsData] = useState([
+    { name: "Unit A", pct: 0, weight: 0 },
+    { name: "Unit B", pct: 0, weight: 0 },
+    { name: "Unit C", pct: 0, weight: 0 },
+  ]);
 
   const fetchData = async () => {
     try {
@@ -64,9 +62,15 @@ export default function Dashboard() {
         const today = new Date();
         const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon...
         const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        
+
         const monday = new Date();
         monday.setDate(today.getDate() + diffToMonday);
+
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        const formatOptions = { month: 'short', day: 'numeric' };
+        const wStr = `${monday.toLocaleDateString('en-US', formatOptions)} - ${sunday.toLocaleDateString('en-US', formatOptions)}`;
+
         const daysAbbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
         for (let i = 0; i < 7; i++) {
@@ -78,23 +82,23 @@ export default function Dashboard() {
           let count = 0;
 
           batchList.forEach(b => {
-             // Match allbatches.jsx date logic
-             let finalBatchDate = b.Date;
-             const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
-             if (batchWeights.length > 0) {
-               const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date) - new Date(w1.Date));
-               if (sortedWeights[0].Date) finalBatchDate = sortedWeights[0].Date;
-             }
-             
-             const rd = new Date(finalBatchDate);
-             if (rd.getDate() === d.getDate() && rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) {
-                 // Batch belongs to this day. Grab its latest rendement.
-                 const ren = renList.find(r => r.BatchId === b.BatchId);
-                 if (ren && !isNaN(parseFloat(ren.Rendement))) {
-                     daySum += parseFloat(ren.Rendement);
-                     count++;
-                 }
-             }
+            // Match allbatches.jsx date logic
+            let finalBatchDate = b.Date;
+            const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
+            if (batchWeights.length > 0) {
+              const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date) - new Date(w1.Date));
+              if (sortedWeights[0].Date) finalBatchDate = sortedWeights[0].Date;
+            }
+
+            const rd = new Date(finalBatchDate);
+            if (rd.getDate() === d.getDate() && rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) {
+              // Batch belongs to this day. Grab its latest rendement.
+              const ren = renList.find(r => r.BatchId === b.BatchId);
+              if (ren && !isNaN(parseFloat(ren.Rendement))) {
+                daySum += parseFloat(ren.Rendement);
+                count++;
+              }
+            }
           });
 
           if (count > 0) {
@@ -106,6 +110,41 @@ export default function Dashboard() {
           }
         }
         setWeeklyChartData(chartData);
+        setWeekRangeStr(wStr);
+
+        // 3. Calculate Storage Units percentages (Capacity: 3000 tons)
+        const unitWeights = { "Unit A": 0, "Unit B": 0, "Unit C": 0 };
+        const UNIT_CAPACITY = 3000;
+        const nowMs = Date.now();
+
+        batchList.forEach(b => {
+          const unit = b.Unit;
+          if (unitWeights.hasOwnProperty(unit)) {
+            let batchTotalWeight = parseFloat(b.NetWeight) || 0;
+            const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
+            
+            let finalBatchDate = b.Date || b.createdAt;
+            if (batchWeights.length > 0) {
+              batchTotalWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
+              const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date || w2.createdAt) - new Date(w1.Date || w1.createdAt));
+              if (sortedWeights[0].Date || sortedWeights[0].createdAt) finalBatchDate = sortedWeights[0].Date || sortedWeights[0].createdAt;
+            }
+
+            // Only count batches from the last 24 hours
+            const batchTimeMs = new Date(finalBatchDate).getTime();
+            if (batchTimeMs >= nowMs - 24 * 60 * 60 * 1000) {
+              unitWeights[unit] += batchTotalWeight;
+            }
+          }
+        });
+
+        const newStorageUnits = Object.keys(unitWeights).map(name => {
+          const totalWeighed = unitWeights[name];
+          let pct = (totalWeighed / UNIT_CAPACITY) * 100;
+          if (pct > 100) pct = 100;
+          return { name, pct: Number(pct.toFixed(2)), weight: Number(totalWeighed.toFixed(1)) };
+        });
+        setStorageUnitsData(newStorageUnits);
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
@@ -131,12 +170,12 @@ export default function Dashboard() {
 
   const handleNavigate = (page) => {
     console.log("Navigate to:", page);
-    
+
   };
 
   const handleLogout = () => {
     console.log("Logout");
-    
+
   };
 
   return (
@@ -195,10 +234,10 @@ export default function Dashboard() {
         </h3>
         <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { iconEl: <Droplets size={17} color="#60a5fa" />, iconBg: "bg-blue-100",   val: latestRendement ? latestRendement.Brix.toString() : "—",  label: "BRIX VALUE",  sub: "Concentration of dissolved solids" },
-            { iconEl: <PenLine  size={17} color="#34d399" />, iconBg: "bg-green-100",  val: latestRendement ? `${latestRendement.Pol}°` : "—", label: "POL VALUE",   sub: "Sucrose polarimetry" },
-            { iconEl: <FlaskConical size={17} color="#94a3b8" />, iconBg: "bg-slate-100", val: latestRendement ? `${latestRendement.Purity}%` : "—",  label: "PURITY",    sub: "Pol value / Brix value" },
-            { iconEl: <Box size={17} color="#b45309" />,      iconBg: "bg-amber-100",  val: latestRendement ? latestRendement.Rendement.toString() : "—",   label: "RENDEMENT",  sub: "Extractable sugar yield" },
+            { iconEl: <Droplets size={17} color="#60a5fa" />, iconBg: "bg-blue-100", val: latestRendement ? latestRendement.Brix.toString() : "—", label: "BRIX VALUE", sub: "Concentration of dissolved solids" },
+            { iconEl: <PenLine size={17} color="#34d399" />, iconBg: "bg-green-100", val: latestRendement ? `${latestRendement.Pol}°` : "—", label: "POL VALUE", sub: "Sucrose polarimetry" },
+            { iconEl: <FlaskConical size={17} color="#94a3b8" />, iconBg: "bg-slate-100", val: latestRendement ? `${latestRendement.Purity}%` : "—", label: "PURITY", sub: "Pol value / Brix value" },
+            { iconEl: <Box size={17} color="#b45309" />, iconBg: "bg-amber-100", val: latestRendement ? latestRendement.Rendement.toString() : "—", label: "RENDEMENT", sub: "Extractable sugar yield" },
           ].map((c, i) => (
             <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
               <div className={`w-8 h-8 rounded-lg ${c.iconBg} flex items-center justify-center mb-2`}>
@@ -219,7 +258,10 @@ export default function Dashboard() {
 
           {/* Chart card */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <h4 className="text-sm font-bold text-gray-900 mb-3">Weekly AVG Rendement Trend</h4>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-sm font-bold text-gray-900">Weekly AVG Rendement</h4>
+              <span className="text-[10px] font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">{weekRangeStr}</span>
+            </div>
             <ResponsiveContainer width="100%" height={118}>
               <BarChart data={weeklyChartData} barSize={400} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <XAxis dataKey="day" axisLine={false} tickLine={false}
@@ -241,15 +283,18 @@ export default function Dashboard() {
             {/* Storage units */}
             <div className="mt-3">
               <p className="text-xs font-semibold text-slate-500 mb-2">Storage Units</p>
-              {storageUnits.map((u, i) => (
+              {storageUnitsData.map((u, i) => (
                 <div key={i} className="flex items-center gap-2 mb-1.5">
                   <span className="text-sm">🏭</span>
-                  <span className="text-xs text-slate-600 w-80">{u.name}</span>
-                  <span className="text-[11px] text-slate-400 w-10">{u.pct}%</span>
-                  <div className="flex-1 bg-slate-200 rounded h-1.5">
+                  <span className="text-xs text-slate-600 flex-1">{u.name}</span>
+                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                    {u.weight || 0} <span className="text-[9px]">Tons</span>
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-700 w-12 text-right">{u.pct}%</span>
+                  <div className="flex-[2] bg-slate-200 rounded h-1.5 overflow-hidden min-w-[70px]">
                     <div
-                      className="h-full rounded"
-                      style={{ width: `${u.pct}%`, background: "#29A379" }}
+                      className="h-full rounded transition-all duration-500"
+                      style={{ width: `${u.pct}%`, background: u.pct > 90 ? "#ef4444" : "#29A379" }}
                     />
                   </div>
                 </div>

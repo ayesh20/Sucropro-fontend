@@ -270,7 +270,7 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
         {/* Sign out */}
         <div
           onClick={handleLogout}
-          className="flex items-center gap-1.5 text-slate-400 text-[12.5px] cursor-pointer hover:text-slate-200 transition-colors"
+          className="flex items-center gap-1.5 text-slate-400 text-[14.5px] cursor-pointer hover:text-red-400 transition-colors font-bold"
         >
           <LogOut size={13} />
           Sign out

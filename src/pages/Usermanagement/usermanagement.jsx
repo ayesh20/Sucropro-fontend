@@ -9,7 +9,7 @@ const avatarColors = [
   "#14532d", "#0e7490", "#b45309", "#7c3aed", "#be123c",
   "#0369a1", "#047857", "#a16207",
 ];
-const getColor    = (name = "") => avatarColors[name.charCodeAt(0) % avatarColors.length];
+const getColor = (name = "") => avatarColors[name.charCodeAt(0) % avatarColors.length];
 const getInitials = (name = "") =>
   name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
@@ -22,21 +22,33 @@ const labelClass =
   "block text-[10px] font-extrabold tracking-[1.4px] text-slate-500 uppercase mb-1.5";
 
 export default function UserManagement() {
-  const [users, setUsers]           = useState([]);
-  const [fetchLoading, setFetch]    = useState(true);
+  const [users, setUsers] = useState([]);
+  const [fetchLoading, setFetch] = useState(true);
   const [selectedUser, setSelected] = useState(null);
-  const [loading, setLoading]       = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     Name: "", email: "", role: "Field Manager", password: "",
   });
 
   const API_URL = import.meta.env.VITE_BACKEND_URL + "/api";
-  const token   = localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
   const adminDataString = localStorage.getItem("adminData");
   const adminData = adminDataString ? JSON.parse(adminDataString) : null;
   const isSuperAdmin = adminData?.role === "Super Admin";
+  const currentUserEmail = adminData?.email || "";
+  const currentUserId = adminData?._id || adminData?.id || adminData?.email || "";
   const headers = { Authorization: `Bearer ${token}` };
+
+  const isCurrentUser = (user) =>
+    !!user && (user._id === currentUserId || user.email === currentUserEmail);
+
+  const getFormValues = (user) => ({
+    Name: user?.Name || user?.name || "",
+    email: user?.email || "",
+    role: user?.role || "Super Admin",
+    password: "",
+  });
 
   const handleChange = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -53,17 +65,18 @@ export default function UserManagement() {
     }
   };
 
+
   useEffect(() => { fetchUsers(); }, []);
 
   /* ── Select user to edit ── */
   const handleEdit = (user) => {
+    if (!isSuperAdmin && !isCurrentUser(user)) {
+      toast.error("You can only update your own profile");
+      return;
+    }
+
     setSelected(user);
-    setForm({
-      Name:     user.Name     || "",
-      email:    user.email    || "",
-      role:     user.role     || "Field Manager",
-      password: "",
-    });
+    setForm(getFormValues(user));
   };
 
   /* ── Clear form ── */
@@ -89,9 +102,9 @@ export default function UserManagement() {
         { Name: form.Name, email: form.email, password: form.password, role: form.role },
         { headers }
       );
-      toast.success("Admin user added successfully!");
+      toast.success("User added successfully!");
       resetForm();
-      fetchUsers(); // refresh list from DB
+      fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add user");
     } finally {
@@ -102,6 +115,10 @@ export default function UserManagement() {
   /* ── Update user ── */
   const handleUpdate = async () => {
     if (!selectedUser) { toast.error("Select a user to update"); return; }
+    if (!isSuperAdmin && !isCurrentUser(selectedUser)) {
+      toast.error("You can only update your own profile");
+      return;
+    }
     if (!isSuperAdmin && selectedUser.role === "Super Admin") {
       toast.error("You cannot modify a Super Admin profile");
       return;
@@ -114,8 +131,10 @@ export default function UserManagement() {
     try {
       await axios.put(
         `${API_URL}/admin/users/${selectedUser._id}`,
-        { Name: form.Name, email: form.email, role: form.role,
-          ...(form.password ? { password: form.password } : {}) },
+        {
+          Name: form.Name, email: form.email, role: form.role,
+          ...(form.password ? { password: form.password } : {})
+        },
         { headers }
       );
       toast.success("User updated successfully!");
@@ -209,8 +228,8 @@ export default function UserManagement() {
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </button>
               </div>
@@ -220,7 +239,7 @@ export default function UserManagement() {
           {/* ── RIGHT: Add / Edit form ── */}
           <div className="bg-white rounded-2xl shadow-sm p-7">
             <h2 className="text-lg font-extrabold text-gray-900 mb-6">
-              {selectedUser ? "Edit Admin User" : "Add New Admin User"}
+              {isSuperAdmin ? (selectedUser ? "Edit Admin User" : "Add New Admin User") : "Edit My Profile"}
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -256,7 +275,8 @@ export default function UserManagement() {
                   <select
                     value={form.role}
                     onChange={(e) => handleChange("role", e.target.value)}
-                    className={`${inputClass} appearance-none pr-8 cursor-pointer`}
+                    disabled={!isSuperAdmin}
+                    className={`${inputClass} appearance-none pr-8 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>{r}</option>
@@ -294,20 +314,20 @@ export default function UserManagement() {
                 style={{ background: "#14532d" }}
                 title={!isSuperAdmin ? "Only Super Admins can add users" : ""}
               >
-                {loading && !selectedUser ? "Adding..." : "Add user Admin"}
+                {loading && !selectedUser ? "Adding..." : isSuperAdmin ? "Add user " : "Add user"}
               </button>
               <button
                 onClick={handleUpdate}
-                disabled={loading || !selectedUser || (!isSuperAdmin && (selectedUser?.role === "Super Admin" || form.role === "Super Admin"))}
+                disabled={loading || !selectedUser || (!isSuperAdmin && !isCurrentUser(selectedUser))}
                 className="py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: "#14532d" }}
-                title={(!isSuperAdmin && (selectedUser?.role === "Super Admin" || form.role === "Super Admin")) ? "Cannot modify or assign Super Admin role" : ""}
+                title={!isSuperAdmin && !isCurrentUser(selectedUser) ? "You can only update your own profile" : ""}
               >
                 {loading && selectedUser ? "Updating..." : "Update User"}
               </button>
             </div>
 
-            
+
 
             {/* Cancel edit */}
             {selectedUser && (

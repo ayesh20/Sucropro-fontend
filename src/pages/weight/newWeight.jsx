@@ -30,9 +30,9 @@ export default function LogNewWeight() {
 
     /* ── Search phase ── */
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchMode, setSearchMode] = useState("batchId"); // "batchId" | "farmerId"
+    const [searchMode, setSearchMode] = useState("batchId");
     const [searching, setSearching] = useState(false);
-    const [foundBatch, setFoundBatch] = useState(null);  // batch doc from DB
+    const [foundBatch, setFoundBatch] = useState(null);
 
     /* ── Weight form ── */
     const [loading, setLoading] = useState(false);
@@ -79,7 +79,6 @@ export default function LogNewWeight() {
             if (!res.ok) throw new Error(data.message || "Batch not found");
 
             setFoundBatch(data);
-            /* Pre-fill vehicle & date from batch */
             setForm({
                 sugarcaneWeightWithVehicle: data.Weightwithvehicle != null ? String(data.Weightwithvehicle) : "",
                 vehicleNo: data.VehicleNo || "",
@@ -108,16 +107,16 @@ export default function LogNewWeight() {
         try {
             const token = localStorage.getItem("authToken");
             const payload = {
-                BatchId:               foundBatch.BatchId,
-                FeildId:               foundBatch.FeildId   || "",
-                CaneAge:               foundBatch.Caneage   || "",
-                CaneVariety:           foundBatch.Vatiety   || "",
-                StorageUnit:           foundBatch.Unit      || "",
-                Date:                  form.date,
-                Weightwithvehicle:     parseFloat(form.sugarcaneWeightWithVehicle),
-                VehicleWeight:         parseFloat(form.vehicleWeight),
+                BatchId: foundBatch.BatchId,
+                FeildId: foundBatch.FeildId || "",
+                CaneAge: foundBatch.Caneage || "",
+                CaneVariety: foundBatch.Vatiety || "",
+                StorageUnit: foundBatch.Unit || "",
+                Date: form.date,
+                Weightwithvehicle: parseFloat(form.sugarcaneWeightWithVehicle),
+                VehicleWeight: parseFloat(form.vehicleWeight),
                 ActualSugarcaneWeight: parseFloat(form.actualSugarcaneWeight),
-                VehicleNo:             form.vehicleNo,
+                VehicleNo: form.vehicleNo,
             };
 
             const res = await fetch(`${API_BASE}/api/weight/create`, {
@@ -173,9 +172,7 @@ export default function LogNewWeight() {
                     </button>
                 </div>
 
-                {/* ════════════════════════════════════
-                    STEP 1 — Search
-                ════════════════════════════════════ */}
+                {/* STEP 1 — Search */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-7 mb-5">
                     <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">
                         Step 1 — Find Batch
@@ -191,8 +188,8 @@ export default function LogNewWeight() {
                                 key={key}
                                 onClick={() => { setSearchMode(key); setSearchQuery(""); setFoundBatch(null); }}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold border transition ${searchMode === key
-                                        ? "bg-green-900 text-white border-green-900"
-                                        : "bg-white text-slate-500 border-slate-200 hover:border-green-700 hover:text-green-800"
+                                    ? "bg-green-900 text-white border-green-900"
+                                    : "bg-white text-slate-500 border-slate-200 hover:border-green-700 hover:text-green-800"
                                     }`}
                             >
                                 {label}
@@ -233,9 +230,7 @@ export default function LogNewWeight() {
                     )}
                 </div>
 
-                {/* ════════════════════════════════════
-                    STEP 2 — Batch details (auto-filled)
-                ════════════════════════════════════ */}
+                {/* STEP 2 — Batch details (auto-filled)*/}
                 {foundBatch && (
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-7 mb-5">
                         <div className="flex items-center justify-between mb-5">
@@ -259,9 +254,7 @@ export default function LogNewWeight() {
                     </div>
                 )}
 
-                {/* ════════════════════════════════════
-                    STEP 3 — Weight entry
-                ════════════════════════════════════ */}
+                {/* STEP 3 — Weight entry */}
                 {foundBatch && (
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-7">
                         <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-6">

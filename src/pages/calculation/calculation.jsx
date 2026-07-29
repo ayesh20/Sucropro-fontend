@@ -99,7 +99,6 @@ export default function SucroseCalculation() {
       if (!res.ok) throw new Error(data.message || "Failed to calculate Randement");
 
       setRendementRes(data.data);
-      // Update Purity and RealValue just to sync fields in case user clicked "Calculate Now" entirely directly
       setPurity(data.data.purity);
       setValueFromDb(data.data.realValue);
 

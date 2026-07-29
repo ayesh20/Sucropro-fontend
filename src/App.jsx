@@ -10,7 +10,9 @@ import AllBatches from "./pages/All batch/allbatch.jsx";
 import SucroseCalculation from "./pages/calculation/calculation.jsx";
 import RegisterBatch from "./pages/Register-Batch/register-batch.jsx";
 import LogNewWeight from "./pages/weight/newWeight.jsx";
-
+import RunPrediction from "./pages/Prediction/runPrediction.jsx";
+import PredictionHistory from "./pages/Prediction/predictionHistory.jsx";
+import LossMonitoring from "./pages/Storage/lossMonitoring.jsx";
 
 function App() {
   return (
@@ -43,7 +45,9 @@ function App() {
           <Route path="/registered-batches" element={<RegisterBatch />} />
           <Route path="/new-weight" element={<LogNewWeight />} />
 
-
+          <Route path="/run-prediction" element={<RunPrediction />} />
+          <Route path="/prediction-history" element={<PredictionHistory />} />
+          <Route path="/loss-monitoring" element={<LossMonitoring />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -122,7 +122,7 @@ export default function Dashboard() {
           if (unitWeights.hasOwnProperty(unit)) {
             let batchTotalWeight = parseFloat(b.NetWeight) || 0;
             const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
-            
+
             let finalBatchDate = b.Date || b.createdAt;
             if (batchWeights.length > 0) {
               batchTotalWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
@@ -216,7 +216,7 @@ export default function Dashboard() {
               Sucrose Productivity Monitor
             </h2>
             <p className="text-green-300 text-[13px] m-0">
-              Good morning, Ayesh. Here's today factory overview.
+              Good morning, Here's today factory overview.
             </p>
           </div>
           {/* Live badge */}

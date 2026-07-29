@@ -153,7 +153,7 @@ export default function LogNewBatch() {
             if (currentWeights.hasOwnProperty(unit)) {
               let batchTotalWeight = parseFloat(b.NetWeight) || 0;
               const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
-              
+
               let finalBatchDate = b.Date || b.createdAt;
               if (batchWeights.length > 0) {
                 batchTotalWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
@@ -483,9 +483,7 @@ export default function LogNewBatch() {
 
       </main>
 
-      {/* ══════════════════════════════════════════════
-          BILL 
-      ════════════════════════════════════════════ */}
+      {/* BILL */}
       {showBill && savedBatch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">

@@ -32,7 +32,6 @@ export default function SucroseCalculation() {
       const batchList = batchData.batches || [];
       const renList = renData.data || [];
 
-      // Filter out batches that already have a Rendement calculated
       const pendingBatches = batchList.filter(b =>
         !renList.some(r => r.BatchId === b.BatchId)
       );

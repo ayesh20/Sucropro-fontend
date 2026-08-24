@@ -121,7 +121,6 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
   const navigate = useNavigate();
   const is = (label) => activePage === label;
 
-  /* ── Read logged-in user from localStorage ── */
   const adminData = (() => {
     try {
       return JSON.parse(localStorage.getItem("adminData")) || {};
@@ -227,7 +226,7 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
 
       <div className="flex-1" />
 
-      {/* ── User section — dynamic from localStorage ── */}
+      {/*  User section  */}
       <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5 mb-2.5">
           {/* Avatar with initials */}

@@ -199,11 +199,7 @@ export default function AdminLogin() {
                                     </span>
                                 ) : 'Login to Dashboard'}
                             </button>
-
                         </form>
-
-
-
                         <p className="text-center text-xs text-slate-400 mt-3">
                             Lanka Sugar Company (Pvt) Ltd
                         </p>

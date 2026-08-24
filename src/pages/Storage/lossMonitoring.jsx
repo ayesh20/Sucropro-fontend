@@ -2,17 +2,18 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import { toast } from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sparkles, BrainCircuit } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 const UNITS = ["Unit A", "Unit B", "Unit C"];
 
-// Segment colors: Storage=green, Used=lime, Loss=red
+
 const DONUT_COLORS = ["#22c55e", "#a3e635", "#f87171"];
 
-//                 = (ownDonutValue / sumOfAllDonutValues) * 100
-//                 For Unit C: Storage → 100/200*100 = 50
+//= (ownDonutValue / sumOfAllDonutValues) * 100
+
 
 function ProgressBar({ label, displayPct, barFillPct, color }) {
   const fill = Math.min(Math.max(barFillPct, 0), 100);
@@ -61,10 +62,74 @@ function makeCustomLabel(displayValues) {
 export default function LossMonitoring() {
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiInsight, setAiInsight] = useState(null);
+  const [aiInsightId, setAiInsightId] = useState(null);
+  const [generatingInsight, setGeneratingInsight] = useState(false);
+  const [clearingInsight, setClearingInsight] = useState(false);
 
   useEffect(() => {
     fetchSummary();
+    fetchLatestInsight();
   }, []);
+
+  const fetchLatestInsight = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`${API_BASE}/api/insights/latest`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.data) {
+        const fetchedId = data.data._id;
+        if (sessionStorage.getItem("hiddenInsightId") !== fetchedId) {
+          setAiInsight(data.data.content);
+          setAiInsightId(fetchedId);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching latest insight", err);
+    }
+  };
+
+  const handleGenerateInsight = async () => {
+    if (!summaryData) {
+      toast.error("No data available to generate insights.");
+      return;
+    }
+    setGeneratingInsight(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`${API_BASE}/api/insights/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ summaryData })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAiInsight(data.data.content);
+        setAiInsightId(data.data._id);
+        sessionStorage.removeItem("hiddenInsightId");
+        toast.success(" Insights generated successfully!");
+      } else {
+        toast.error(data.message || "Failed to generate insights");
+      }
+    } catch (err) {
+      toast.error("Error generating insights");
+    } finally {
+      setGeneratingInsight(false);
+    }
+  };
+
+  const handleClearInsight = () => {
+    setAiInsight(null);
+    if (aiInsightId) {
+      sessionStorage.setItem("hiddenInsightId", aiInsightId);
+    }
+    toast.success(" Insights cleared successfully!");
+  };
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -101,8 +166,7 @@ export default function LossMonitoring() {
 
     if (storageTons > 0) {
       // Math.abs() because the DB stores sucrose loss as a negative number (e.g. -0.2964).
-      // Without it: lossDonut = -2.5  → usedDonut = 100-(-2.5) = 102.5 → barFill 51.25% ❌
-      // With it:    lossDonut =  2.5  → usedDonut = 100- 2.5    =  97.5 → barFill 48.75% ✔
+      // With it:    lossDonut =  2.5  → usedDonut = 100- 2.5    =  97.5 → barFill 48.75% 
       lossDonut = Math.round((Math.abs(lostTons) / storageTons) * 1000) / 10;
       usedDonut = Math.round((100 - lossDonut) * 10) / 10;
       storageDonut = 100;
@@ -155,13 +219,16 @@ export default function LossMonitoring() {
               Automated sucrose productivity calculation engine
             </p>
           </div>
-          <button
-            onClick={fetchSummary}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 border border-slate-200 bg-white px-3 py-2 rounded-lg hover:border-green-500 hover:text-green-700 transition-colors shadow-sm"
-          >
-            <RefreshCw size={13} />
-            Refresh
-          </button>
+          <div className="flex gap-3">
+
+            <button
+              onClick={fetchSummary}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 border border-slate-200 bg-white px-3 py-2 rounded-lg hover:border-green-500 hover:text-green-700 transition-colors shadow-sm"
+            >
+              <RefreshCw size={13} />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* White card */}
@@ -264,6 +331,58 @@ export default function LossMonitoring() {
             </div>
           )}
         </div>
+
+        {/* AI Insights Card */}
+        <div className="flex justify-end gap-4 items-start mb-2 py-8 px-2">
+          <button
+            onClick={handleGenerateInsight}
+            disabled={generatingInsight}
+            className="flex items-center gap-1.5 text-xs font-semibold text-white border border-transparent bg-green-800 px-4 py-2 rounded-lg hover:bg-green-900 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <Sparkles size={14} className={generatingInsight ? "animate-pulse" : ""} />
+            {generatingInsight ? "Analyzing..." : "Generate Insights"}
+          </button>
+          <button
+            onClick={handleClearInsight}
+            disabled={clearingInsight}
+            className="flex items-center gap-1.5 text-xs font-semibold text-white border border-transparent bg-green-800 px-4 py-2 rounded-lg hover:bg-green-900 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+
+            {clearingInsight ? "Clearing..." : "Clear Insights"}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm p-8  border-t-4 border-green-500">
+
+          <div className="flex items-center gap-3 mb-6">
+
+            <div className="p-2 bg-green-100 rounded-lg">
+              <BrainCircuit className="text-green-800 " size={24} />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 m-0">
+              Strategic Insights
+            </h2>
+          </div>
+
+          {generatingInsight ? (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-full"></div>
+              <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            </div>
+          ) : aiInsight ? (
+            <div className="prose prose-sm max-w-none text-slate-700 prose-headings:text-indigo-900 prose-strong:text-indigo-700">
+              <ReactMarkdown>{aiInsight}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Sparkles size={40} className="mb-4 opacity-20" />
+              <p>No insights generated yet. Click the button above to analyze your weekly data.</p>
+            </div>
+          )}
+        </div>
+
 
       </main>
     </div>

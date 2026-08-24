@@ -177,17 +177,16 @@ export default function RegisterBatch() {
                     {/* ── Search mode toggle ── */}
                     <div className="flex gap-2 mb-4">
                         {[
-                            { key: "batchId",  label: "Batch ID" },
+                            { key: "batchId", label: "Batch ID" },
                             { key: "farmerId", label: "Farmer ID" },
                         ].map(({ key, label }) => (
                             <button
                                 key={key}
                                 onClick={() => { setSearchMode(key); setSearchId(""); setBatch(null); setWeight(null); }}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition ${
-                                    searchMode === key
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition ${searchMode === key
                                         ? "bg-green-900 text-white border-green-900"
                                         : "bg-white text-slate-500 border-slate-200 hover:border-green-700 hover:text-green-800"
-                                }`}
+                                    }`}
                             >
                                 {label}
                             </button>
@@ -236,9 +235,7 @@ export default function RegisterBatch() {
                     )}
                 </div>
 
-                {/* ══════════════════════════════════════════
-                    PHASE 2 — Details + New Vehicle
-                ══════════════════════════════════════════ */}
+                {/*  PHASE 2 — Details + New Vehicle */}
                 {batch && (
                     <>
                         {/* Batch details card */}

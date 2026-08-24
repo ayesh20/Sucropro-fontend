@@ -21,6 +21,14 @@ const batchCards = [
 ];
 
 
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 22) return "Good evening";
+  return "Good night";
+};
+
 export default function Dashboard() {
   const [time, setTime] = useState("");
   const [dateStr, setDateStr] = useState("");
@@ -44,7 +52,6 @@ export default function Dashboard() {
 
       const renJson = await renRes.json();
       if (renRes.ok && renJson.data) {
-        // 1. Latest Rendement by real calculation date
         const sorted = [...renJson.data].sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
         if (sorted.length > 0) setLatestRendement(sorted[0]);
       }
@@ -57,10 +64,9 @@ export default function Dashboard() {
         const renList = renJson.data || [];
         const weightList = weightJson.weights || [];
 
-        // 2. Calculate averages using BATCH date to place it on the correct chart day
         const chartData = [];
         const today = new Date();
-        const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon...
+        const dayOfWeek = today.getDay();
         const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
         const monday = new Date();
@@ -82,7 +88,6 @@ export default function Dashboard() {
           let count = 0;
 
           batchList.forEach(b => {
-            // Match allbatches.jsx date logic
             let finalBatchDate = b.Date;
             const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
             if (batchWeights.length > 0) {
@@ -92,7 +97,6 @@ export default function Dashboard() {
 
             const rd = new Date(finalBatchDate);
             if (rd.getDate() === d.getDate() && rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear()) {
-              // Batch belongs to this day. Grab its latest rendement.
               const ren = renList.find(r => r.BatchId === b.BatchId);
               if (ren && !isNaN(parseFloat(ren.Rendement))) {
                 daySum += parseFloat(ren.Rendement);
@@ -102,7 +106,6 @@ export default function Dashboard() {
           });
 
           if (count > 0) {
-            // Using toFixed(1) for cleaner display
             const avg = Number((daySum / count).toFixed(1));
             chartData.push({ day: dayName, v: avg });
           } else {
@@ -112,7 +115,7 @@ export default function Dashboard() {
         setWeeklyChartData(chartData);
         setWeekRangeStr(wStr);
 
-        // 3. Calculate Storage Units percentages (Capacity: 3000 tons)
+        // Calculate Storage Units percentages (Capacity: 3000 tons)
         const unitWeights = { "Unit A": 0, "Unit B": 0, "Unit C": 0 };
         const UNIT_CAPACITY = 3000;
         const nowMs = Date.now();
@@ -216,7 +219,7 @@ export default function Dashboard() {
               Sucrose Productivity Monitor
             </h2>
             <p className="text-green-300 text-[13px] m-0">
-              Good morning, Here's today factory overview.
+              {getGreeting()}, Here's today's factory overview.
             </p>
           </div>
           {/* Live badge */}

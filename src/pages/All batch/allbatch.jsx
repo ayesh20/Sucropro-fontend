@@ -113,11 +113,9 @@ export default function AllBatches() {
       const renList = renData.data || [];
       const weightList = weightData.weights || [];
 
-      // Merge backend rendements and weights into batches by BatchId
       const mergedBatches = batchList.map(b => {
         const ren = renList.find(r => r.BatchId === b.BatchId);
 
-        // Find all weights for this batch ID
         const batchWeights = weightList.filter(w => w.BatchId === b.BatchId);
 
         let totalNetWeight = b.NetWeight || "—";
@@ -127,7 +125,6 @@ export default function AllBatches() {
         if (batchWeights.length > 0) {
           totalNetWeight = batchWeights.reduce((sum, w) => sum + (parseFloat(w.NetWeight) || 0), 0);
 
-          // Sort weights by date descending to get the latest date and vehicle no
           const sortedWeights = [...batchWeights].sort((w1, w2) => new Date(w2.Date) - new Date(w1.Date));
           if (sortedWeights[0].Date) {
             latestDate = sortedWeights[0].Date;
@@ -161,11 +158,9 @@ export default function AllBatches() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Filter logic
   useEffect(() => {
     let result = [...batches];
 
-    // Search filter
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -176,7 +171,6 @@ export default function AllBatches() {
       );
     }
 
-    // Time filter
     const now = new Date();
     if (timeFilter === "today") {
       result = result.filter((b) => {
@@ -213,7 +207,6 @@ export default function AllBatches() {
     }
   };
 
-  // Pagination
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 

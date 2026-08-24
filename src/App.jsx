@@ -13,6 +13,7 @@ import LogNewWeight from "./pages/weight/newWeight.jsx";
 import RunPrediction from "./pages/Prediction/runPrediction.jsx";
 import PredictionHistory from "./pages/Prediction/predictionHistory.jsx";
 import LossMonitoring from "./pages/Storage/lossMonitoring.jsx";
+import BatchReport from "./pages/Reports/batchreport.jsx";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           <Route path="/run-prediction" element={<RunPrediction />} />
           <Route path="/prediction-history" element={<PredictionHistory />} />
           <Route path="/loss-monitoring" element={<LossMonitoring />} />
+          <Route path="/batch-report" element={<BatchReport />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

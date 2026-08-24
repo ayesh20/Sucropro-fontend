@@ -57,7 +57,6 @@ export default function RunPrediction() {
         setPredictedBatchIds(ids);
       }
     } catch (err) {
-      // Silently fail — don't block the UI if history can't load
     }
   };
 
@@ -119,7 +118,6 @@ export default function RunPrediction() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Prediction successful!");
-        // Process feature importance for recharts
         const rawFeatures = data.data.featureImportance || {};
         const formattedFeatures = Object.keys(rawFeatures).map(key => ({
           name: key,

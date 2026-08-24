@@ -6,7 +6,7 @@ import Sidebar from "../../components/Sidebar";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
-/* ─── print helper ─────────────────────────────────── */
+/*  print helper  */
 function printBill(billRef) {
   const content = billRef.current?.innerHTML;
   if (!content) return;
@@ -31,11 +31,10 @@ function printBill(billRef) {
   `);
   win.document.close();
   win.focus();
-  /* Wait for Tailwind CDN to load before printing */
   setTimeout(() => { win.print(); win.close(); }, 1200);
 }
 
-/* ─── Bill content ─── */
+/*  Bill content  */
 function BillContent({ batch, printedAt }) {
   const fmtDate = (d) =>
     d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }) : "—";
@@ -55,7 +54,7 @@ function BillContent({ batch, printedAt }) {
   return (
     <div className="font-sans text-slate-800">
 
-      {/* ── Header ── */}
+      {/* Header  */}
       <div className="text-center border-b-2 border-green-800 pb-4 mb-5">
         <h1 className="text-xl font-extrabold text-green-800 tracking-wide">
           🌿 LANKA SUGAR COMPANY (PVT) LTD
@@ -65,12 +64,12 @@ function BillContent({ batch, printedAt }) {
         </p>
       </div>
 
-      {/* ── Sub-title ── */}
+      {/* Sub-title  */}
       <p className="text-center text-[11px] font-bold tracking-[3px] uppercase text-green-800 mb-5">
         — Farmer Delivery Receipt —
       </p>
 
-      {/* ── Info grid ── */}
+      {/* Info grid  */}
       <div className="grid grid-cols-2 gap-x-7 gap-y-3 mb-5">
         {fields.map(([label, val]) => (
           <div key={label} className="flex flex-col gap-0.5">
@@ -82,7 +81,7 @@ function BillContent({ batch, printedAt }) {
         ))}
       </div>
 
-      {/* ── Weight highlight ── */}
+      {/* Weight highlight  */}
       <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-xl px-5 py-4 mb-5">
         <span className="text-[10px] font-bold tracking-[2px] uppercase text-green-800">
           Gross Weight with Vehicle (Tonnes)
@@ -92,7 +91,7 @@ function BillContent({ batch, printedAt }) {
         </span>
       </div>
 
-      {/* ── Footer ── */}
+      {/* Footer  */}
       <div className="border-t border-dashed border-slate-300 pt-4 flex justify-between items-end text-[10px] text-slate-400">
         <div className="flex flex-col gap-0.5">
           <span>Batch ID: <strong className="text-slate-600">{batch.BatchId}</strong></span>
@@ -109,7 +108,7 @@ function BillContent({ batch, printedAt }) {
   );
 }
 
-/* ─── Main component ──────────────────────────────── */
+/*  Main component  */
 export default function LogNewBatch() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

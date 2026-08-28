@@ -112,7 +112,7 @@ export default function BatchReport() {
 
     return (
         <div className="flex h-screen font-sans bg-green-50 overflow-hidden">
-            <Sidebar activePage="Reports" />
+            <Sidebar activePage="Batch Report" />
 
             <main className="flex-1 overflow-y-auto p-7">
                 <div className="flex justify-between items-end mb-6">

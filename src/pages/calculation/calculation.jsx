@@ -122,7 +122,7 @@ export default function SucroseCalculation() {
               Automated sucrose productivity calculation engine
             </p>
           </div>
-          <RefreshButton onClick={fetchBatches} />
+          <RefreshButton />
         </div>
 
         {/* ── Content Grid ── */}

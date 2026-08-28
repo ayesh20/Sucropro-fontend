@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react';
 
 export default function RefreshButton({ onClick, className }) {
   const handleClick = onClick || (() => window.location.reload());
-  
+
   return (
     <button
       onClick={handleClick}

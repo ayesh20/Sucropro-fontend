@@ -3,6 +3,7 @@ import { RefreshCw, Printer, X, CheckCircle, Leaf } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Sidebar from "../../components/Sidebar";
+import RefreshButton from "../../components/RefreshButton";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
@@ -308,12 +309,7 @@ export default function LogNewBatch() {
             </p>
           </div>
           <div className="flex flex-col items-end gap-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-1.5 bg-green-100 hover:bg-green-200 text-green-900 text-xs font-semibold px-4 py-2 rounded-lg transition"
-            >
-              <RefreshCw size={12} /> Refresh
-            </button>
+            <RefreshButton></RefreshButton>
             <div className="flex gap-3">
               {/* Search to Print Existing */}
               <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-green-700 focus-within:ring-1 focus-within:ring-green-700 transition shadow-sm h-[48px]">

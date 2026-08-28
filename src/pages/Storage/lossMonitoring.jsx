@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
+import RefreshButton from "../../components/RefreshButton";
 import { toast } from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { RefreshCw, Sparkles, BrainCircuit } from "lucide-react";
@@ -221,13 +222,7 @@ export default function LossMonitoring() {
           </div>
           <div className="flex gap-3">
 
-            <button
-              onClick={fetchSummary}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 border border-slate-200 bg-white px-3 py-2 rounded-lg hover:border-green-500 hover:text-green-700 transition-colors shadow-sm"
-            >
-              <RefreshCw size={13} />
-              Refresh
-            </button>
+            <RefreshButton onClick={fetchSummary} />
           </div>
         </div>
 

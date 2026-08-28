@@ -14,6 +14,7 @@ import RunPrediction from "./pages/Prediction/runPrediction.jsx";
 import PredictionHistory from "./pages/Prediction/predictionHistory.jsx";
 import LossMonitoring from "./pages/Storage/lossMonitoring.jsx";
 import BatchReport from "./pages/Reports/batchreport.jsx";
+import ChartsGraphs from "./pages/Reports/chart&graphs.jsx";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
           <Route path="/prediction-history" element={<PredictionHistory />} />
           <Route path="/loss-monitoring" element={<LossMonitoring />} />
           <Route path="/batch-report" element={<BatchReport />} />
+          <Route path="/charts-graphs" element={<ChartsGraphs />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

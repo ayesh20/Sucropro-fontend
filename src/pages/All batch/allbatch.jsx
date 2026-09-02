@@ -92,6 +92,15 @@ export default function AllBatches() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  const adminData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("adminData")) || {};
+    } catch {
+      return {};
+    }
+  })();
+  const isSuperAdmin = (adminData.role || adminData.Role || "").trim() === "Super Admin";
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -287,7 +296,7 @@ export default function AllBatches() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {["Batch ID", "Last Date", "Field", "Variety", "Total Weight(T)", "Unit", "vehicle-No", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", "Actions"].map((h) => (
+                  {["Batch ID", "Last Date", "Field", "Variety", "Total Weight(T)", "Unit", "vehicle-No", "Brix*", "Pol%", "AcPol%", "Ren", "Purity", "Grade", ...(isSuperAdmin ? ["Actions"] : [])].map((h) => (
                     <th
                       key={h}
                       className="text-left text-[10px] font-bold tracking-widest text-slate-400 uppercase pb-3 pr-4"
@@ -314,15 +323,17 @@ export default function AllBatches() {
                     <td className="py-3 pr-4 text-slate-600">{batch.Purity}</td>
                     <td className="py-3 pr-4 text-slate-600">{batch.Grade}</td>
 
-                    <td className="py-3">
-                      <button
-                        onClick={() => handleDelete(batch._id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition"
-                        title="Delete batch"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
+                    {isSuperAdmin && (
+                      <td className="py-3">
+                        <button
+                          onClick={() => handleDelete(batch._id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition"
+                          title="Delete batch"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

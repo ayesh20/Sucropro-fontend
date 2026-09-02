@@ -128,16 +128,12 @@ export default function ChartsGraphs() {
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
 
-    // Last 7 days slice for daily chart
     const dailySlice = dailyBatches.slice(-7);
 
-    // Last 7 rendement entries slice for Section 4
     const rendementSlice = rendement.slice(-10);
-    console.log("rendementSlice:", rendementSlice);                      // ← add this
-    console.log("rendementSlice dates:", rendementSlice.map(r => r.date)); // ← add this
+    console.log("rendementSlice:", rendementSlice);
+    console.log("rendementSlice dates:", rendementSlice.map(r => r.date));
 
-    // Storage performance chart data — aggregated totals across all 3 units
-    // Used Tons = Storage Tons − Loss Tons (i.e. batch weight minus sucrose lost)
     const storageAggData = (() => {
         const totals = storagePerf.reduce((acc, u) => ({
             storageTons: acc.storageTons + (u.totalBatchWeight || 0),
@@ -160,7 +156,6 @@ export default function ChartsGraphs() {
         "Humidity": parseFloat((u.avgHumidity || 0).toFixed(1)),
     }));
 
-    // Radar needs a single array of metrics
     const radarMetrics = ["Batches", "Avg Loss %", "Entry Ren.", "Pred. Ren.", "Humidity"];
 
     const anyLoading = Object.values(loading).some(Boolean);
@@ -267,7 +262,6 @@ export default function ChartsGraphs() {
                             </ResponsiveContainer>
                         )}
 
-                        {/* Mini unit stat pills */}
                         {!loading.storage && storagePerf.length > 0 && (
                             <div className="flex gap-2 mt-4">
                                 {storagePerf.map(u => (
@@ -361,7 +355,6 @@ export default function ChartsGraphs() {
                                     </LineChart>
                                 </ResponsiveContainer>
 
-                                {/* Accuracy summary */}
                                 {rendementSlice.length > 0 && (() => {
                                     const avgDiff = rendementSlice.reduce((s, r) => s + Math.abs(r.actualRendement - r.predictedRendement), 0) / rendementSlice.length;
                                     const accurate = rendementSlice.filter(r => Math.abs(r.actualRendement - r.predictedRendement) < 1).length;

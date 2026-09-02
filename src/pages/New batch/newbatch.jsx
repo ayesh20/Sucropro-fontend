@@ -145,6 +145,22 @@ export default function LogNewBatch() {
           const batchList = batchJson.batches || [];
           const weightList = weightJson.weights || [];
 
+          const currentYear = new Date().getFullYear();
+          let maxSequence = 0;
+          batchList.forEach(b => {
+            if (b.BatchId && b.BatchId.startsWith(`B-${currentYear}-`)) {
+              const sequencePart = b.BatchId.split('-')[2];
+              if (sequencePart) {
+                const sequenceNum = parseInt(sequencePart, 10);
+                if (!isNaN(sequenceNum) && sequenceNum > maxSequence) {
+                  maxSequence = sequenceNum;
+                }
+              }
+            }
+          });
+          const nextSequence = String(maxSequence + 1).padStart(3, '0');
+          const autoBatchId = `B-${currentYear}-${nextSequence}`;
+
           const currentWeights = { "Unit A": 0, "Unit B": 0, "Unit C": 0 };
           const nowMs = Date.now();
 
@@ -180,7 +196,7 @@ export default function LogNewBatch() {
           }
 
           setActiveUnit(currentActive);
-          setForm(prev => ({ ...prev, storageUnit: currentActive }));
+          setForm(prev => ({ ...prev, storageUnit: currentActive, batchId: autoBatchId }));
         }
       } catch (err) {
         console.error("Failed to fetch storage data", err);
@@ -202,7 +218,7 @@ export default function LogNewBatch() {
   const handleSearchPrint = async () => {
     const id = searchPrintId.trim();
     if (!id) {
-      toast.error("Please enter a Batch ID or Farmer ID");
+      toast.error("Please enter a Batch ID");
       return;
     }
     setSearchingPrint(true);
@@ -212,11 +228,9 @@ export default function LogNewBatch() {
       let res = await fetch(`${API_BASE}/api/batch/find/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
       let data = await res.json();
 
-      // If not found by Batch ID, try by Farmer ID
+      // If not found by Batch ID
       if (!res.ok) {
-        res = await fetch(`${API_BASE}/api/batch/find-by-farmer/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
-        data = await res.json();
-        if (!res.ok) throw new Error("Batch or Farmer not found");
+        throw new Error("Batch not found");
       }
 
       setSavedBatch(data);
@@ -271,8 +285,9 @@ export default function LogNewBatch() {
       if (!res.ok) throw new Error(data.message || "Failed to save batch");
 
       toast.success("Batch logged successfully!");
-      setSavedBatch(data.batch);   // store for bill
-      setShowBill(true);           // open bill modal
+      setSavedBatch(data.batch);
+      setShowBill(true);
+
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -315,7 +330,7 @@ export default function LogNewBatch() {
               <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-green-700 focus-within:ring-1 focus-within:ring-green-700 transition shadow-sm h-[48px]">
                 <input
                   type="text"
-                  placeholder="Print existing (Batch/Farmer ID)"
+                  placeholder="Print existing (Batch)"
                   value={searchPrintId}
                   onChange={(e) => setSearchPrintId(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearchPrint()}
@@ -359,17 +374,17 @@ export default function LogNewBatch() {
 
               {/* Batch ID */}
               <div>
-                <label className={labelClass}>Batch ID <span className="text-red-400">*</span></label>
-                <input type="text" placeholder="B-2024-149"
+                <label className={labelClass}>Batch ID (Auto-Generated) <span className="text-red-400">*</span></label>
+                <input type="text" placeholder={`B-${new Date().getFullYear()}-001`}
                   value={form.batchId}
-                  onChange={(e) => handleChange("batchId", e.target.value)}
-                  className={inputClass} />
+                  readOnly
+                  className={`${inputClass} bg-slate-200 cursor-not-allowed`} />
               </div>
 
               {/* Farmer ID */}
               <div>
                 <label className={labelClass}>Farmer ID <span className="text-red-400">*</span></label>
-                <input type="text" placeholder="F-001"
+                <input type="text" placeholder="123456789v"
                   value={form.farmerId}
                   onChange={(e) => handleChange("farmerId", e.target.value)}
                   className={inputClass} />
@@ -516,7 +531,10 @@ export default function LogNewBatch() {
                 <Printer size={16} /> Print Receipt
               </button>
               <button
-                onClick={() => { setShowBill(false); }}
+                onClick={() => {
+                  setShowBill(false);
+                  window.location.reload(true);
+                }}
                 className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm"
               >
                 Close

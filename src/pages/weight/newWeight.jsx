@@ -62,7 +62,7 @@ export default function LogNewWeight() {
     const handleSearch = async () => {
         const q = searchQuery.trim();
         if (!q) {
-            toast.error(searchMode === "batchId" ? "Please enter a Batch ID" : "Please enter a Farmer ID");
+            toast.error("Please enter a Batch ID ");
             return;
         }
         setSearching(true);
@@ -128,7 +128,7 @@ export default function LogNewWeight() {
             if (!res.ok) throw new Error(data.message || "Failed to save weight");
 
             toast.success("Weight logged successfully!");
-            navigate("/batch-list");
+            handleReset()
         } catch (err) {
             toast.error(err.message);
         } finally {
@@ -161,7 +161,7 @@ export default function LogNewWeight() {
                             <Scale size={26} className="text-green-700" /> Log New Weight
                         </h1>
                         <p className="text-xs text-gray-500 mt-1">
-                            Search by Batch ID or Farmer ID — details auto-fill
+                            Search by Batch ID — details auto-fill
                         </p>
                     </div>
                     <button
@@ -182,7 +182,7 @@ export default function LogNewWeight() {
                     <div className="flex gap-2 mb-4">
                         {[
                             { key: "batchId", label: "Batch ID" },
-                            { key: "farmerId", label: "Farmer ID" },
+
                         ].map(({ key, label }) => (
                             <button
                                 key={key}
@@ -204,9 +204,7 @@ export default function LogNewWeight() {
                             <input
                                 type="text"
                                 placeholder={
-                                    searchMode === "batchId"
-                                        ? "Enter Batch ID  (e.g. B-2024-149)"
-                                        : "Enter Farmer ID (e.g. F-001)"
+                                    "Enter Batch ID(e.g. B-2024-149)"
                                 }
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -277,7 +275,8 @@ export default function LogNewWeight() {
                                         placeholder="e.g. 35.00"
                                         value={form.sugarcaneWeightWithVehicle}
                                         onChange={(e) => handleWeightChange("sugarcaneWeightWithVehicle", e.target.value)}
-                                        className={inputClass}
+                                        readOnly={foundBatch?.Weightwithvehicle != null}
+                                        className={`${inputClass} ${foundBatch?.Weightwithvehicle != null ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
                                     />
                                 </div>
 
@@ -330,7 +329,8 @@ export default function LogNewWeight() {
                                         placeholder="e.g. LM-7865"
                                         value={form.vehicleNo}
                                         onChange={(e) => setForm((p) => ({ ...p, vehicleNo: e.target.value }))}
-                                        className={inputClass}
+                                        readOnly={!!foundBatch?.VehicleNo}
+                                        className={`${inputClass} ${foundBatch?.VehicleNo ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
                                     />
                                 </div>
 
@@ -343,7 +343,8 @@ export default function LogNewWeight() {
                                         type="date"
                                         value={form.date}
                                         onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-                                        className={`${inputClass} pr-10`}
+                                        readOnly={!!foundBatch?.Date}
+                                        className={`${inputClass} ${foundBatch?.Date ? "bg-slate-50 cursor-not-allowed text-slate-500 pointer-events-none" : ""} pr-10`}
                                     />
                                 </div>
 
@@ -366,9 +367,7 @@ export default function LogNewWeight() {
                     <div className="flex flex-col items-center justify-center py-20 text-center text-slate-400">
                         <Scale size={48} className="mb-4 text-slate-200" />
                         <p className="text-sm font-semibold">
-                            {searchMode === "batchId"
-                                ? "Enter a Batch ID above and click Search"
-                                : "Enter a Farmer ID above and click Search"}
+                            Enter a Batch ID above and click Search
                         </p>
                         <p className="text-xs mt-1">Batch details will auto-fill once found</p>
                     </div>

@@ -179,31 +179,41 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
                 active={is("Log New Batch")} onClick={() => navigate("/new-batch")} />
               <NavItem icon={<ClipIcon active={is("Log New Weight")} />} label="Submit Weight"
                 active={is("Log New Weight")} onClick={() => navigate("/new-weight")} />
+
+            </>
+          )}
+          {(isSuperAdmin || isLabTechnician || isFieldManager) && (
+            <>
               <NavItem icon={<ClipIcon active={is("All Batches")} />} label="All Batches"
                 active={is("All Batches")} onClick={() => navigate("/batch-list")} />
             </>
           )}
           {(isSuperAdmin || isLabTechnician) && (
-            <NavItem icon={<CalcIcon active={is("Sucrose Calculation")} />} label="Sucrose Calculation"
-              active={is("Sucrose Calculation")} onClick={() => navigate("/calculation")} />
+            <>
+              <NavItem icon={<CalcIcon active={is("Sucrose Calculation")} />} label="Sucrose Calculation"
+                active={is("Sucrose Calculation")} onClick={() => navigate("/calculation")} />
+            </>
           )}
           {!isLabTechnician && (
             <NavItem icon={<DocNav active={is("Registered Batches")} />} label="Registered Batches"
               active={is("Registered Batches")} onClick={() => navigate("/registered-batches")} />
           )}
         </>
-      )}
+      )
+      }
 
       {/* PREDICTIONS */}
-      {!isFieldManager && !isLabTechnician && (isStorageManager || isSuperAdmin) && (
-        <>
-          <SectionLabel text="PREDICTIONS" color="#fff" />
-          <NavItem icon={<ZapNavIcon active={is("Run Prediction")} />} label="Run Prediction"
-            active={is("Run Prediction")} onClick={() => navigate("/run-prediction")} />
-          <NavItem icon={<CircleNav active={is("Prediction History")} />} label="Prediction History"
-            active={is("Prediction History")} onClick={() => navigate("/prediction-history")} />
-        </>
-      )}
+      {
+        !isFieldManager && !isLabTechnician && (isStorageManager || isSuperAdmin) && (
+          <>
+            <SectionLabel text="PREDICTIONS" color="#fff" />
+            <NavItem icon={<ZapNavIcon active={is("Run Prediction")} />} label="Run Prediction"
+              active={is("Run Prediction")} onClick={() => navigate("/run-prediction")} />
+            <NavItem icon={<CircleNav active={is("Prediction History")} />} label="Prediction History"
+              active={is("Prediction History")} onClick={() => navigate("/prediction-history")} />
+          </>
+        )
+      }
 
       {/* STORAGE */}
       <SectionLabel text="STORAGE" color="#fff" />
@@ -255,6 +265,6 @@ export default function Sidebar({ activePage = "Dashboard", onLogout }) {
         </div>
       </div>
 
-    </aside>
+    </aside >
   );
 }

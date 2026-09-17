@@ -262,7 +262,7 @@ export default function Dashboard() {
           {/* Chart card */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex justify-between items-center mb-3">
-              <h4 className="text-sm font-bold text-gray-900">Weekly AVG Rendement</h4>
+              <h4 className="text-sm font-bold text-gray-900">Weekly AVG Rendement & storages</h4>
               <span className="text-[10px] font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">{weekRangeStr}</span>
             </div>
             <ResponsiveContainer width="100%" height={118}>

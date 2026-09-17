@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Truck, Scale, RefreshCw, CheckCircle, ChevronRight, Package } from "lucide-react";
+import { useState, useRef } from "react";
+import { Search, Truck, Scale, RefreshCw, CheckCircle, ChevronRight, Package, Printer, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Sidebar from "../../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,105 @@ import RefreshButton from "../../components/RefreshButton";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
+/*  print helper  */
+function printBill(billRef) {
+  const content = billRef.current?.innerHTML;
+  if (!content) return;
+
+  const win = window.open("", "_blank", "width=860,height=720");
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Batch Receipt</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        @media print { body { padding: 0; } }
+        body { background: #fff; }
+      </style>
+    </head>
+    <body class="p-10 font-sans text-slate-800 bg-white">
+      ${content}
+    </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 1200);
+}
+
+/*  Bill content  */
+function BillContent({ batch, printedAt }) {
+  const fmtDate = (d) =>
+    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+
+  const fields = [
+    ["Batch ID", batch.BatchId],
+    ["Farmer ID", batch.FarmerId || "N/A"],
+    ["Harvest Date", fmtDate(batch.Date)],
+    ["Field ID", batch.FeildId],
+    ["Cane Variety", batch.Vatiety],
+    ["Cane Age", `${batch.Caneage} Months`],
+    ["Vehicle Number", batch.VehicleNo || "N/A"],
+    ["Storage Unit", batch.Unit],
+    ["Weight w/ Vehicle", `${Number(batch.Weightwithvehicle).toFixed(2)} T`],
+  ];
+
+  return (
+    <div className="font-sans text-slate-800">
+      {/* Header  */}
+      <div className="text-center border-b-2 border-green-800 pb-4 mb-5">
+        <h1 className="text-xl font-extrabold text-green-800 tracking-wide">
+          🌿 LANKA SUGAR COMPANY (PVT) LTD
+        </h1>
+        <p className="text-[11px] text-slate-500 mt-1">
+          Batch Registration Receipt &nbsp;·&nbsp; Printed: {printedAt}
+        </p>
+      </div>
+
+      {/* Sub-title  */}
+      <p className="text-center text-[11px] font-bold tracking-[3px] uppercase text-green-800 mb-5">
+        — Farmer Delivery Receipt —
+      </p>
+
+      {/* Info grid  */}
+      <div className="grid grid-cols-2 gap-x-7 gap-y-3 mb-5">
+        {fields.map(([label, val]) => (
+          <div key={label} className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold tracking-[2px] uppercase text-slate-400">
+              {label}
+            </span>
+            <span className="text-[13px] font-semibold text-slate-800">{val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Weight highlight  */}
+      <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-xl px-5 py-4 mb-5">
+        <span className="text-[10px] font-bold tracking-[2px] uppercase text-green-800">
+          Gross Weight with Vehicle (Tonnes)
+        </span>
+        <span className="text-2xl font-black text-green-800">
+          {Number(batch.Weightwithvehicle).toFixed(2)} T
+        </span>
+      </div>
+
+      {/* Footer  */}
+      <div className="border-t border-dashed border-slate-300 pt-4 flex justify-between items-end text-[10px] text-slate-400">
+        <div className="flex flex-col gap-0.5">
+          <span>Batch ID: <strong className="text-slate-600">{batch.BatchId}</strong></span>
+          <span>This receipt is computer generated.</span>
+        </div>
+        <div className="text-center">
+          <div className="w-40 border-t border-slate-500 mt-7 pt-1 text-[10px] text-slate-600">
+            Authorised Signature
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const InfoRow = ({ label, value }) => (
     <div className="flex flex-col gap-0.5">
@@ -31,6 +130,11 @@ export default function RegisterBatch() {
     const [newWeightWithVehicle, setNewWeightWithVehicle] = useState("");
     const [newVehicleNumber, setNewVehicleNumber] = useState("");
     const [updating, setUpdating] = useState(false);
+
+    /* bill modal state */
+    const [showBill, setShowBill] = useState(false);
+    const billRef = useRef(null);
+    const printedAt = new Date().toLocaleString("en-GB");
 
 
     const handleSearch = async () => {
@@ -244,9 +348,14 @@ export default function RegisterBatch() {
                                 <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
                                     Step 2 — Batch Details
                                 </p>
-                                <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
-                                    <CheckCircle size={12} /> Found
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setShowBill(true)} className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-green-800 px-4 py-1.5 rounded-full transition shadow-sm">
+                                        <Printer size={12} /> Print Receipt
+                                    </button>
+                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                                        <CheckCircle size={12} /> Found
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -350,6 +459,37 @@ export default function RegisterBatch() {
                 )}
 
             </main>
+
+            {/* BILL MODAL */}
+            {showBill && batch && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle size={18} className="text-green-600" />
+                                <span className="font-bold text-slate-800 text-sm"> — Farmer Receipt — </span>
+                            </div>
+                            <button onClick={() => setShowBill(false)} className="text-slate-400 hover:text-slate-700 transition">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 px-6 py-5">
+                            <div ref={billRef} className="border border-slate-200 rounded-xl p-6 bg-white">
+                                <BillContent batch={batch} printedAt={printedAt} />
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
+                            <button onClick={() => printBill(billRef)} className="flex-1 flex items-center justify-center gap-2 bg-green-900 hover:bg-green-800 text-white font-bold py-3 rounded-xl transition text-sm">
+                                <Printer size={16} /> Print Receipt
+                            </button>
+                            <button onClick={() => setShowBill(false)} className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

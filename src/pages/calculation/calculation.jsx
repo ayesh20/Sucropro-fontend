@@ -91,7 +91,7 @@ export default function SucroseCalculation() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ BatchId: selectedBatchId, brix, pol })
+        body: JSON.stringify({ BatchId: selectedBatchId, brix, pol, save: false })
       });
       const data = await res.json();
 
@@ -101,8 +101,40 @@ export default function SucroseCalculation() {
       setPurity(data.data.purity);
       setValueFromDb(data.data.realValue);
 
-      toast.success("Rendement successfully calculated and saved!", { id: tId });
+      toast.success("Rendement successfully calculated!", { id: tId });
 
+    } catch (err) {
+      toast.error(err.message, { id: tId });
+    }
+  };
+
+  const handleSaveRandement = async () => {
+    if (!selectedBatchId || !brix || !pol || !rendementRes) {
+      toast.error("Please calculate first before saving.");
+      return;
+    }
+    const tId = toast.loading("Saving Randement...");
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`${API_BASE}/api/rendement/calculate-randement`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ BatchId: selectedBatchId, brix, pol, save: true })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to save Randement");
+      toast.success("Rendement successfully saved!", { id: tId });
+
+      setBatches(batches.filter(b => b.BatchId !== selectedBatchId));
+      setSelectedBatchId("");
+      setRendementRes(null);
+      setBrix("");
+      setPol("");
+      setPurity("");
+      setValueFromDb("");
     } catch (err) {
       toast.error(err.message, { id: tId });
     }
@@ -203,11 +235,22 @@ export default function SucroseCalculation() {
 
             {/* Calculate Now button FULL width */}
             <label className="block text-[12px] font-extrabold tracking-[1.5px] text-slate-500 mb-2 uppercase">RENDEMENT</label>
-            <button
-              onClick={handleCalculateRandement}
-              className="w-full bg-[#0d4a36] hover:bg-[#0a3829] text-white font-bold text-sm px-4 py-4 rounded-xl transition flex justify-center items-center gap-2">
-              <span className="text-yellow-400"><Zap fill="currentColor" size={16} /></span> Calculate Now
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={handleCalculateRandement}
+                className="flex-1 bg-[#0d4a36] hover:bg-[#0a3829] text-white font-bold text-sm px-4 py-4 rounded-xl transition flex justify-center items-center gap-2">
+                <span className="text-yellow-400"><Zap fill="currentColor" size={16} /></span> Calculate
+              </button>
+              <button
+                onClick={handleSaveRandement}
+                disabled={!rendementRes}
+                className={`flex-1 font-bold text-sm px-4 py-4 rounded-xl transition flex justify-center items-center gap-2 ${rendementRes
+                  ? 'bg-[#0d4a36] hover:bg-[#0a3829] text-white'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}>
+                Save Record
+              </button>
+            </div>
           </div>
 
           {/* ── Right Column ── */}
